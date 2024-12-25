@@ -1,0 +1,25 @@
+/* SplashScreen.css */
+.splash-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    animation: fadeOut 1s ease-in-out 2s forwards;
+}
+
+.splash-logo {
+    height: 15em;
+    width: auto;
+    padding: 1.5em;
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0);
+    }
+}

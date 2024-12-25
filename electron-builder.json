@@ -1,0 +1,14 @@
+{
+    "appId": "com.bereket-girma.autoshift",
+    "files": ["dist-electron", "dist-react"],
+    "icon": "./src/ui/logo/logo-color.png", 
+    "mac": {
+        "target": "dmg"
+    },
+    "linux": {
+        "target": "AppImage"
+    },
+    "win": {
+        "target": ["portable", "msi"]
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "compilerOptions" : {
+        "forceConsistentCasingInFileNames": true, //ensure consistent casing in file names
+        "strict": true, //require strict types (null-save)
+        "target": "ESNext", //tell TypeScript to generate ESM Syntax
+        "module": "NodeNext", //tell TypeScript to require ESM Syntax as input (including .js file imports)
+        "outDir": "../../dist-electron", //define where to put generated js
+        "skipLibCheck": true, //ignore errors from dependencies
+    }
+}
