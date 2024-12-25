@@ -1,0 +1,42 @@
+.home {
+    display: flex;
+    flex-direction: column;
+    border-radius: 5px;
+    background-color: white;
+    padding: 1rem;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    gap:2rem;
+}
+
+.shift-container{
+    display: flex;
+    height: 100%;
+    overflow: auto;
+    border: 1px rgb(222, 222, 222) solid;
+}
+
+.button-container{
+    display: flex;
+    justify-content: center;
+    gap:2rem
+}
+
+.button-container .MuiButton-root {
+    min-width: 20%;
+    max-width: 30%;
+    color: white;
+    font-weight: bold;
+}
+
+.no-outline:focus{
+    outline: none;
+    box-shadow: none;
+}
+
+.snackbar-items{
+    display: flex;
+    flex: 1 1;
+}
