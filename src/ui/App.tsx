@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import SplashScreen from './components/SplashScreen';
 import MainContent from './components/MainContent';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -17,17 +17,16 @@ const theme = createTheme({
   }
 })
 
-function App() {
-  const [showSplash, setShowSplash] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 3500);
-    return () => clearTimeout(timer);
-  }, []);
+const App: React.FC = () => {
+  const [initialized, setInitilized] = useState(false);
 
   return (
     <ThemeProvider theme={theme}>
-      {showSplash ? <SplashScreen /> : <MainContent />}
+      {!initialized ? (
+        <SplashScreen onInitilizationComplete={() => setInitilized(true)} />
+        ) : (
+        <MainContent />
+        )}
     </ThemeProvider>
   )
 }
