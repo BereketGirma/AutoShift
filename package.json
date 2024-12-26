@@ -21,8 +21,10 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.3.0",
     "@mui/material": "^6.3.0",
+    "fs": "^0.0.1-security",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "sheetjs-style": "^0.15.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
