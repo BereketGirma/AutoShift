@@ -1,6 +1,7 @@
 {
     "appId": "com.bereket-girma.autoshift",
     "files": ["dist-electron", "dist-react"],
+    "extraResources": ["dist-electron/preload.cjs"],
     "icon": "./src/ui/logo/logo-color.png", 
     "mac": {
         "target": "dmg"
