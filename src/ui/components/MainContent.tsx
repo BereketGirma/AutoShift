@@ -17,20 +17,28 @@ import {
 
 import DeleteIcon from '@mui/icons-material/Delete';
 import MuiAlert from '@mui/material/Alert'
+import AddShiftModal from './AddShiftModal';
+
+interface Shift{
+    id: number;
+    day: string;
+    startTime: string;
+    endTime: string;
+}
 
 function MainContent () {
 
-    const [shifts, setShift] = useState([
-        {id: 1, day: 'Monday', startTime: '9:00 AM', endTime: '5:00 PM', selected: false},
-        {id: 2, day: 'Tuesday', startTime: '11:00 AM', endTime: '2:00 PM', selected: false},
-        {id: 3, day: 'Wednesday', startTime: '10:00 AM', endTime: '4:00 PM', selected: false},
+    const [shifts, setShift] = useState<Shift[]>([
+        {id: 1, day: 'Monday', startTime: '9:00 AM', endTime: '5:00 PM'},
+        {id: 2, day: 'Tuesday', startTime: '11:00 AM', endTime: '2:00 PM'},
+        {id: 3, day: 'Wednesday', startTime: '10:00 AM', endTime: '4:00 PM'},
     ]);
 
     const [snackbarQueue, setSnackbarQueue] = useState<string[]>([]);
     const [snackbarOpen, setSnackbarOpen] = useState(false)
     const [currentSnackbarMessage, setCurrentSnackbarMessage] = useState("")
 
-    const handleDelete = (id: number) => {
+    const handleDeleteShift = (id: number) => {
        const shiftToDelete = shifts.find(shift => shift.id === id);
         if (shiftToDelete) {
             setShift((prevShifts) => prevShifts.filter((shift) => shift.id !== id));
@@ -62,6 +70,24 @@ function MainContent () {
             showNextSnackbar();
         }, 500)
     }
+
+    const [modalOpen, setModalOpen] = useState(false);
+
+    const handleOpenModal = () => {
+        setModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setModalOpen(false);
+    };
+
+    const handleSaveShift = (newShift: { day: string; startTime: string; endTime: string}) => {
+        const newShiftWithId = {
+            ...newShift,
+            id: shifts.length + 1,
+        }
+        setShift([...shifts, newShiftWithId])
+    };
 
     return (
         <div className='home'>
@@ -97,7 +123,7 @@ function MainContent () {
                                         <IconButton
                                             color = "warning"
                                             className='no-outline'
-                                            onClick={() => handleDelete(shift.id)}
+                                            onClick={() => handleDeleteShift(shift.id)}
                                         >
                                             <DeleteIcon/>
                                         </IconButton>
@@ -126,13 +152,15 @@ function MainContent () {
             </Paper>
             
             <div className='button-container'>
-                <Button variant="contained" color='primary' className='no-outline add-shift'>
+                <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal}>
                     Add Shift
                 </Button>
-                <Button variant="contained" color='secondary' className='no-outline'>
+                <Button variant="contained" color='secondary'>
                     Continue
                 </Button>
             </div>
+
+            <AddShiftModal open={modalOpen} onClose={handleCloseModal} onAddShift={handleSaveShift}></AddShiftModal>
         </div>
     )
 }

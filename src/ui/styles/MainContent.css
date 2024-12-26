@@ -30,13 +30,3 @@
     color: white;
     font-weight: bold;
 }
-
-.no-outline:focus{
-    outline: none;
-    box-shadow: none;
-}
-
-.snackbar-items{
-    display: flex;
-    flex: 1 1;
-}
