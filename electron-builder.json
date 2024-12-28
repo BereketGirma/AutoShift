@@ -10,6 +10,7 @@
         "target": "AppImage"
     },
     "win": {
-        "target": ["portable", "msi"]
+        "target": ["portable", "msi"],
+        "signAndEditExecutable": false
     }
 }
