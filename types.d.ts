@@ -1,3 +1,5 @@
+export {};
+
 type checkAndCreateFile = {
     status: string,
     filePath: string

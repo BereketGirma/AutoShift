@@ -6,5 +6,6 @@
         "module": "NodeNext", //tell TypeScript to require ESM Syntax as input (including .js file imports)
         "outDir": "../../dist-electron", //define where to put generated js
         "skipLibCheck": true, //ignore errors from dependencies
+        "types": ["../../types"] //add global
     }
 }
