@@ -16,10 +16,9 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onInitilizationComplete }) 
             try {
                 setStatusText('Checking for required files...');
 
-                const result = await window.electron.checkAndCreateFile()
-                console.log(`File stauts: ${result.status}, Path: ${result.filePath}`)
+                const result = await window.electron.invoke('check-and-create-file')
 
-                if(result.stauts === 'created'){
+                if(result.status === 'created'){
                     setTimeout(() => setStatusText('File created successfully!'), 2000);
                 } else {
                     setTimeout(() => setStatusText('Files found!'), 2000);
