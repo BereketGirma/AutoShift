@@ -1,7 +1,15 @@
 const electron = require("electron");
+import type { EventPayloadMapping } from "./util.js" assert { "resolution-mode": "import" };
 
-electron.contextBridge.exposeInMainWorld("electron", {
-    checkAndCreateFile: async () => {
-        return electron.ipcRenderer.invoke('check-and-create-file')
+const electronAPI = {
+    invoke<K extends keyof EventPayloadMapping>(
+        channel: K,
+        ...args: EventPayloadMapping[K]['request'] extends undefined
+            ? []
+            : [EventPayloadMapping[K]['request']]
+    ): Promise<EventPayloadMapping[K]['response']> {
+        return electron.ipcRenderer.invoke(channel, ...args)
     }
-})
+};
+
+electron.contextBridge.exposeInMainWorld('electron', electronAPI)
