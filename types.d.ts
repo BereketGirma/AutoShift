@@ -1,14 +1,8 @@
-export {};
-
-type checkAndCreateFile = {
-    status: string,
-    filePath: string
-};
+export  {};
+import type { ElectronAPI } from './src/electron/util'
 
 declare global{
     interface Window {
-        electron: {
-            checkAndCreateFile: () => Promise<map>;
-        };
+        electron: ElectronAPI;
     }
 }
