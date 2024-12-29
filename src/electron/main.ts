@@ -1,8 +1,9 @@
-import {app, BrowserWindow, ipcMain} from 'electron';
+import {app, BrowserWindow } from 'electron';
 import path from 'path';
 import fs from 'fs';
-import { isDev } from './util.js'
+import { isDev, createIpcMain } from './util.js'
 import { getPreloadPath } from './pathResolver.js';
+import { ExcelOperations } from './excelOperations.js';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -29,14 +30,6 @@ const createWindow = () => {
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
   })
-
-  //Handle the close event on macOS to hide the window instead of closing it
-  mainWindow.on('close', (e) => {
-    if(process.platform === 'darwin') {
-      e.preventDefault(); //Prevent the window from closing
-      mainWindow?.hide(); //Hide the window instead
-    }
-  });
 };
 
 app.whenReady().then(() => {
@@ -57,16 +50,18 @@ app.on('window-all-closed', () => {
   }
 })
 
+const ipc = createIpcMain()
 
-ipcMain.handle('check-and-create-file', async () => {
-  const filePath = path.resolve(app.getPath('userData'), 'shift.xlsx');
+const excelOps = new ExcelOperations();
 
-  if(!fs.existsSync(filePath)) {
+ipc.handle('check-and-create-file', async () => {
+  if(!fs.existsSync(excelOps.filePath)) {
     console.log('Excel file does not exist. Creating...')
-    fs.writeFileSync(filePath, '')
-    return { status: 'created', filePath}
+    excelOps.createNewWorkbook();
+    return { status: 'created', filePath: excelOps.filePath}
   } else {
     console.log('Execl file exists');
-    return { status: 'exists', filePath}
+    return { status: 'exists', filePath: excelOps.filePath}
   }
 })
+
