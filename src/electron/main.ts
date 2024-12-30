@@ -1,7 +1,7 @@
 import {app, BrowserWindow } from 'electron';
 import path from 'path';
 import fs from 'fs';
-import { isDev, createIpcMain } from './util.js'
+import { isDev, createIpcMain, ExcelData } from './util.js'
 import { getPreloadPath } from './pathResolver.js';
 import { ExcelOperations } from './excelOperations.js';
 
@@ -57,7 +57,7 @@ const excelOps = new ExcelOperations();
 ipc.handle('check-and-create-file', async () => {
   if(!fs.existsSync(excelOps.filePath)) {
     console.log('Excel file does not exist. Creating...')
-    excelOps.createNewWorkbook();
+    excelOps.loadFile();
     return { status: 'created', filePath: excelOps.filePath}
   } else {
     console.log('Execl file exists');
@@ -65,3 +65,22 @@ ipc.handle('check-and-create-file', async () => {
   }
 })
 
+ipc.handle('read-excel-file', async () => {
+  try{
+    const shifts = await excelOps.readExcelFile();
+    console.log(shifts)
+    return { success: true, data:shifts}
+  } catch (error: any) {
+    console.error('Error reading excel file:',error.message)
+    return { success: false, error: error.message || 'Failed to read Excel file'}
+  }
+})
+
+ipc.handle('write-into-file', async (_event, newData: ExcelData[]) => {
+  try{
+    excelOps.writeIntoFile(newData)
+    return { success: true }
+  } catch (error: any) {
+    return {success: false, error: error.message || 'Failed to save shift'}
+  }
+})
