@@ -27,6 +27,14 @@ export interface EventPayloadMapping {
             error?: string;
         };
     };
+
+    'write-into-file': {
+        request: ExcelData[],
+        response: {
+            success: boolean;
+            error?: string;
+        }
+    }
     //Add more events here
 }
 
