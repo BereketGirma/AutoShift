@@ -89,6 +89,11 @@ function MainContent () {
         setShift([...shifts, newShiftWithId])
     };
 
+    const getShifts = () => {
+        const shifts = window.electron.invoke('read-excel-file')
+        console.log(shifts)
+    }
+
     return (
         <div className='home'>
             <div>
@@ -155,7 +160,7 @@ function MainContent () {
                 <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal}>
                     Add Shift
                 </Button>
-                <Button variant="contained" color='secondary'>
+                <Button variant="contained" color='secondary' onClick={getShifts}>
                     Continue
                 </Button>
             </div>
