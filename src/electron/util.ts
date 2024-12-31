@@ -4,7 +4,6 @@ export function isDev(): boolean {
     return process.env.NODE_ENV === 'development';
 }
 export interface ExcelData {
-    id: number;
     day: string;
     startTime: string;
     endTime: string;
@@ -29,7 +28,7 @@ export interface EventPayloadMapping {
     };
 
     'write-into-file': {
-        request: ExcelData[],
+        request: void,
         response: {
             success: boolean;
             error?: string;
