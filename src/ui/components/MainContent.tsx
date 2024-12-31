@@ -1,5 +1,5 @@
 import '../styles/MainContent.css';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
     Typography, 
     Table,
@@ -18,44 +18,31 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import MuiAlert from '@mui/material/Alert'
 import AddShiftModal from './AddShiftModal';
-
-interface Shift{
-    id: number;
-    day: string;
-    startTime: string;
-    endTime: string;
-}
+import { ExcelData } from '../../electron/util';
 
 function MainContent () {
 
-    const [shifts, setShift] = useState<Shift[]>([
-        {id: 1, day: 'Monday', startTime: '9:00 AM', endTime: '5:00 PM'},
-        {id: 2, day: 'Tuesday', startTime: '11:00 AM', endTime: '2:00 PM'},
-        {id: 3, day: 'Wednesday', startTime: '10:00 AM', endTime: '4:00 PM'},
-    ]);
+    const [shifts, setShift] = useState<ExcelData[]>([]);
 
     const [snackbarQueue, setSnackbarQueue] = useState<string[]>([]);
     const [snackbarOpen, setSnackbarOpen] = useState(false)
     const [currentSnackbarMessage, setCurrentSnackbarMessage] = useState("")
 
-    const handleDeleteShift = (id: number) => {
-       const shiftToDelete = shifts.find(shift => shift.id === id);
-        if (shiftToDelete) {
-            setShift((prevShifts) => prevShifts.filter((shift) => shift.id !== id));
-
-            const message = `Shift on ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime} deleted!`
-            setSnackbarQueue((prevQueue) => [...prevQueue, message]);
-            
-            if(!snackbarOpen){
-                setSnackbarOpen(true);
-                setCurrentSnackbarMessage(message);
-                setSnackbarQueue((prevQueue) => prevQueue.slice(1))
-            }
-        }
-    };
+    const getShifts = () => {
+        window.electron.invoke('read-excel-file')
+            .then((response: { success: boolean, data:ExcelData[]}) => {
+                if(Array.isArray(response.data) && response.data.length > 0){
+                    setShift(response.data);
+                } else {
+                    setShift([]);
+                }
+            })
+            .catch((error: string) => {
+                console.error('Error reading shifts:',error)
+            })
+    }
 
     const showNextSnackbar = () => {
-        console.log(snackbarQueue)
         if(snackbarQueue.length > 0) {
             const nextMessage = snackbarQueue[0];
             setCurrentSnackbarMessage(nextMessage)
@@ -81,18 +68,24 @@ function MainContent () {
         setModalOpen(false);
     };
 
-    const handleSaveShift = (newShift: { day: string; startTime: string; endTime: string}) => {
-        const newShiftWithId = {
-            ...newShift,
-            id: shifts.length + 1,
-        }
-        setShift([...shifts, newShiftWithId])
-    };
-
-    const getShifts = () => {
-        const shifts = window.electron.invoke('read-excel-file')
-        console.log(shifts)
+    const handleSaveShift = (data: { day: string; startTime: string; endTime: string}) => {
+        window.electron.invoke('write-into-file', [data])
+            .then((response: { success: boolean; error?: string }) => {
+                if(response.success) {
+                    console.log('Shift saved')
+                    return getShifts()
+                } else {
+                    throw new Error(response.error || 'Failed to save shift')
+                }
+            })
+            .catch((error:string) => {
+                console.error('Error invoking write to file:',error);
+            })
     }
+
+    useEffect(() => {
+        getShifts();
+    }, [])
 
     return (
         <div className='home'>
@@ -118,9 +111,16 @@ function MainContent () {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {shifts.map((shift) => (
-                                <TableRow key={shift.id}>
-                                    <TableCell>{shift.id}</TableCell>
+                            {shifts.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan = {5} align='center'>
+                                        No shifts found. Add a shift to get started!
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                shifts.map((shift, index) => (
+                                <TableRow key={index}>
+                                    <TableCell>{index + 1}</TableCell>
                                     <TableCell>{shift.day}</TableCell>
                                     <TableCell>{shift.startTime}</TableCell>
                                     <TableCell>{shift.endTime}</TableCell>
@@ -128,13 +128,13 @@ function MainContent () {
                                         <IconButton
                                             color = "warning"
                                             className='no-outline'
-                                            onClick={() => handleDeleteShift(shift.id)}
+                                            // onClick={() => handleDeleteShift(shift.id)}
                                         >
                                             <DeleteIcon/>
                                         </IconButton>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )))}
                         </TableBody>
                     </Table>
                 </TableContainer>
