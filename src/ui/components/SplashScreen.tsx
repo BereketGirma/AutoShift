@@ -21,7 +21,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onInitilizationComplete }) 
                 if(result.status === 'created'){
                     setTimeout(() => setStatusText('File created successfully!'), 2000);
                 } else {
-                    console.log(result)
                     setTimeout(() => setStatusText('Files found!'), 2000);
                 }
 

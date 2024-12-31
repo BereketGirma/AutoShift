@@ -68,7 +68,6 @@ ipc.handle('check-and-create-file', async () => {
 ipc.handle('read-excel-file', async () => {
   try{
     const shifts = await excelOps.readExcelFile();
-    console.log(shifts)
     return { success: true, data:shifts}
   } catch (error: any) {
     console.error('Error reading excel file:',error.message)
