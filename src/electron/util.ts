@@ -33,6 +33,14 @@ export interface EventPayloadMapping {
             success: boolean;
             error?: string;
         }
+    },
+
+    'delete-from-file': {
+        request: void,
+        response: {
+            success: boolean;
+            error?: string;
+        }
     }
     //Add more events here
 }

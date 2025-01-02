@@ -56,11 +56,9 @@ const excelOps = new ExcelOperations();
 
 ipc.handle('check-and-create-file', async () => {
   if(!fs.existsSync(excelOps.filePath)) {
-    console.log('Excel file does not exist. Creating...')
     excelOps.loadFile();
     return { status: 'created', filePath: excelOps.filePath}
   } else {
-    console.log('Execl file exists');
     return { status: 'exists', filePath: excelOps.filePath}
   }
 })
@@ -70,16 +68,24 @@ ipc.handle('read-excel-file', async () => {
     const shifts = await excelOps.readExcelFile();
     return { success: true, data:shifts}
   } catch (error: any) {
-    console.error('Error reading excel file:',error.message)
     return { success: false, error: error.message || 'Failed to read Excel file'}
   }
 })
 
 ipc.handle('write-into-file', async (_event, newData: ExcelData[]) => {
   try{
-    excelOps.writeIntoFile(newData)
+    await excelOps.writeIntoFile(newData)
     return { success: true }
   } catch (error: any) {
     return {success: false, error: error.message || 'Failed to save shift'}
+  }
+})
+
+ipc.handle('delete-from-file', async (_event, removedData: ExcelData) => {
+  try{
+    await excelOps.deleteFromFile(removedData);
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to delete shift'}
   }
 })
