@@ -214,7 +214,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
                     mt:2, 
                     gap: 2}}
                 >
-                    <Button onClick={onClose} variant='contained' color="warning">
+                    <Button onClick={onClose} variant='contained' color="error">
                         Cancel
                     </Button>
                     <Button onClick={handleSave} variant='contained' color="primary">
