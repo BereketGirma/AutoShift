@@ -1,28 +1,24 @@
 import React, { useState } from "react";
 import { Box, Button, TextField, Typography, Container } from "@mui/material";
+import { useSnackbar } from "./SnackbarProvider";
 
 function CredentialForm() {
     const [starID, setStarID] = useState<string>("");
     const [password, setPassword] = useState<string>("");
-    const [error, setError] = useState<{ starID?: string, password?: string}>({});
-    const newErrors: {starID?: string, password?: string} = {};
+    const [error, setError] = useState<boolean>(false);
+
+    const { enqueueSnackbar } = useSnackbar();
 
     const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if(!starID.trim()) {
-            newErrors.starID = "StarID is required."
-        }
-
-        if(!password.trim()) {
-            newErrors.password = "Password is required."
-        }
-
-        if(Object.keys(newErrors).length > 0){
-            setError(newErrors)
+        if(!starID.trim() || !password.trim()) {
+            enqueueSnackbar("StarID and Password are required.", "error")
+            setError(true)
             return
         }
-        setError({});
+        
+        setError(false);
     }
 
     return (
@@ -50,9 +46,8 @@ function CredentialForm() {
                     label="StarID *"
                     variant="outlined"
                     value={starID}
-                    onChange={(e) => {setStarID(e.target.value); setError({}); }}
-                    error={Boolean(error.starID)}
-                    helperText={error.starID}
+                    onChange={(e) => {setStarID(e.target.value); setError(false); }}
+                    error={error}
                 />
 
                 <TextField
@@ -60,14 +55,10 @@ function CredentialForm() {
                     variant="outlined"
                     value={password}
                     type="password"
-                    onChange={(e) => { setPassword(e.target.value); setError({}); }}
-                    error={Boolean(error.password)}
-                    helperText={error.password}
+                    onChange={(e) => { setPassword(e.target.value); setError(false); }}
+                    error={error}
                 />
-
-            </Box>
-
-            
+            </Box>     
 
             <Button
                 type="submit"
