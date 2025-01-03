@@ -14,12 +14,24 @@ interface CalanderContentProps {
 }
 
 function CalanderContent({onNavigate}: CalanderContentProps) {
-    const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
+    const [selectedStartDate, setSelectedStartDate] = useState<Dayjs | null>(dayjs());
+    const [selectedEndDate, setSelectedEndDate] = useState<Dayjs | null>(dayjs());
 
-    const handleChange = (newDate: Dayjs | null) => {
-        setSelectedDate(newDate)
-        console.log("Selected date:",newDate?.format("YYYY-MM-DD"))
+    const handleStartDateChange = (newDate: Dayjs | null) => {
+        setSelectedStartDate(newDate)
+
+        if(newDate && selectedEndDate && newDate.isAfter(selectedEndDate)){
+            console.log('working')
+            setSelectedEndDate(newDate)            
+        }
     }
+
+    const handleEndDateChange = (newDate: Dayjs | null) => {
+        if(newDate && selectedStartDate && newDate.isAfter(selectedEndDate)){
+            setSelectedEndDate(newDate)
+        }
+    }
+    
     
     return (
         <Container 
@@ -73,15 +85,16 @@ function CalanderContent({onNavigate}: CalanderContentProps) {
                     <LocalizationProvider dateAdapter = {AdapterDayjs}>
                         <DesktopDatePicker 
                             label="Start date"
-                            value={selectedDate}
-                            onChange={handleChange}
+                            value={selectedStartDate}
+                            onChange={handleStartDateChange}
                         />
                     </LocalizationProvider>
                     <LocalizationProvider dateAdapter = {AdapterDayjs}>
                         <DesktopDatePicker 
                             label="End date"
-                            value={selectedDate}
-                            onChange={handleChange}
+                            value={selectedEndDate}
+                            onChange={handleEndDateChange}
+                            minDate={selectedStartDate || undefined}
                         />
                     </LocalizationProvider>
                 </Box>
