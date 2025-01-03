@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import SplashScreen from './components/SplashScreen';
 import MainContent from './components/MainContent';
-import CalanderContent from './components/CalanderContent'
+import CalenderContent from './components/CalenderContent'
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Container } from '@mui/material';
 import CredentialForm from './components/CredentialForm';
+import SnackbarProvider from './components/SnackbarProvider';
 
 const theme = createTheme({
   palette: {
@@ -30,18 +31,19 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      {!initialized ? (
-        <SplashScreen onInitilizationComplete={() => setInitilized(true)} />
-        ) : currentPage === "main" ? (
-        <MainContent onNavigate={() => navigateTo('calander')}/>
-        ) : (
-          <Container className='home'>
-            <CalanderContent onNavigate={() => navigateTo('main')} />
-            <CredentialForm></CredentialForm>
-          </Container>
-          
-        )}
-
+      <SnackbarProvider>
+        {!initialized ? (
+          <SplashScreen onInitilizationComplete={() => setInitilized(true)} />
+          ) : currentPage === "main" ? (
+          <MainContent onNavigate={() => navigateTo('calander')}/>
+          ) : (
+            
+              <Container className='home'>
+                <CalenderContent onNavigate={() => navigateTo('main')} />
+                <CredentialForm />
+              </Container>          
+          )}
+      </SnackbarProvider>
     </ThemeProvider>
 
   )
