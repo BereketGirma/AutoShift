@@ -25,7 +25,11 @@ interface SnackbarMessage {
     severity: 'success' | 'error' | 'warning' | 'info'
 }
 
-function MainContent () {
+interface MainContentProps {
+    onNavigate: () => void
+}
+
+function MainContent ({onNavigate}: MainContentProps) {
 
     const [shifts, setShift] = useState<ExcelData[]>([]);
 
@@ -217,7 +221,7 @@ function MainContent () {
                 <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal}>
                     Add Shift
                 </Button>
-                <Button variant="contained" color='secondary' onClick={getShifts}>
+                <Button variant="contained" color='secondary' onClick={onNavigate}>
                     Continue
                 </Button>
             </div>
