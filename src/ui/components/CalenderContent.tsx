@@ -13,7 +13,7 @@ interface CalanderContentProps {
     onNavigate: () => void
 }
 
-function CalanderContent({onNavigate}: CalanderContentProps) {
+function CalenderContent({onNavigate}: CalanderContentProps) {
     const [selectedStartDate, setSelectedStartDate] = useState<Dayjs | null>(dayjs());
     const [selectedEndDate, setSelectedEndDate] = useState<Dayjs | null>(dayjs());
 
@@ -103,4 +103,4 @@ function CalanderContent({onNavigate}: CalanderContentProps) {
     )
 }
 
-export default CalanderContent;
+export default CalenderContent;
