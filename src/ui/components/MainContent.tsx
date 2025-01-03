@@ -1,5 +1,5 @@
 import '../styles/MainContent.css';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { 
     Typography, 
     Table,
@@ -11,32 +11,22 @@ import {
     TableRow,
     Button,
     IconButton,
-    Snackbar,
-    Slide,
-    Alert,
 } from '@mui/material';
 
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddShiftModal from './AddShiftModal';
 import { ExcelData } from '../../electron/util';
+import { useSnackbar } from './SnackbarProvider';
 
-interface SnackbarMessage {
-    message: string;
-    severity: 'success' | 'error' | 'warning' | 'info'
-}
 
 interface MainContentProps {
     onNavigate: () => void
 }
 
 function MainContent ({onNavigate}: MainContentProps) {
+    const { enqueueSnackbar } = useSnackbar();
 
     const [shifts, setShift] = useState<ExcelData[]>([]);
-
-    const snackbarQueue = useRef<SnackbarMessage[]>([]);
-    const processingRef = useRef(false);
-    const [snackbarOpen, setSnackbarOpen] = useState(false)
-    const [currentSnackbar, setCurrentSnackbar] = useState<SnackbarMessage | null>(null);
 
     const getShifts = () => {
         window.electron.invoke('read-excel-file')
@@ -50,49 +40,6 @@ function MainContent ({onNavigate}: MainContentProps) {
             .catch((error: string) => {
                 console.error('Error reading shifts:',error)
             })
-    }
-
-    const addToSnackbarQueue = async (message: string, severity: SnackbarMessage['severity']) => {
-        snackbarQueue.current.push({ message, severity });
-
-        if(!processingRef.current) {
-            await processQueue();
-        }
-    }
-
-    const processQueue = async () => {
-        processingRef.current = true;
-
-        while(snackbarQueue.current.length > 0) {
-            const nextSnackbar = snackbarQueue.current.shift();
-            if(nextSnackbar){
-                await showSnackbar(nextSnackbar);
-            }
-        }
-
-        processingRef.current = false;
-    }
-
-    const showSnackbar = (snackbar: SnackbarMessage): Promise<void> => {
-        return new Promise((resolve) => {
-            setCurrentSnackbar(snackbar);
-            setSnackbarOpen(true);
-
-            setTimeout(() => {
-                setSnackbarOpen(false);
-
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            }, 4000);
-        })
-    }
-
-    const handleCloseSnackbar = async (_event: React.SyntheticEvent | Event, reason?: string) => {
-        if(reason === 'clickaway'){
-            return;
-        }
-        setSnackbarOpen(false);
     }
 
     const [modalOpen, setModalOpen] = useState(false);
@@ -109,19 +56,19 @@ function MainContent ({onNavigate}: MainContentProps) {
         window.electron.invoke('write-into-file', [data])
             .then((response: { success: boolean; error?: string }) => {
                 if(response.success) {
-                    addToSnackbarQueue(`Saved Shift: ${data.day} from ${data.startTime} to ${data.endTime}`, 'success')
+                    enqueueSnackbar(`Saved Shift: ${data.day} from ${data.startTime} to ${data.endTime}`, 'success')
                     return getShifts()
                 } else {
                     if(response.error === 'Collision'){
-                        addToSnackbarQueue('Shift conflicts with existing schedule!', 'error')
+                        enqueueSnackbar('Shift conflicts with existing schedule!', 'error')
                     } else {
-                        addToSnackbarQueue('An error occured with adding shift!', 'error')
+                        enqueueSnackbar('An error occured with adding shift!', 'error')
                     }
                 }
             })
             .catch((error:string) => {
                 console.error('Error invoking write to file:',error);
-                addToSnackbarQueue('Unexpected error occured while saving shift.', 'error')
+                enqueueSnackbar('Unexpected error occured while saving shift.', 'error')
             })
     }
 
@@ -129,10 +76,10 @@ function MainContent ({onNavigate}: MainContentProps) {
         window.electron.invoke('delete-from-file', shiftToDelete)
             .then((response: { success: boolean; error?: string }) => {
                 if(response.success) {
-                    addToSnackbarQueue(`Deleted Shift: ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime}`, 'warning')
+                    enqueueSnackbar(`Deleted Shift: ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime}`, 'warning')
                     return getShifts()
                 } else {
-                    addToSnackbarQueue(`Failed to delete Shift: ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime}`, 'error')
+                    enqueueSnackbar(`Failed to delete Shift: ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime}`, 'error')
                     throw new Error(response.error || 'Failed to delete shift')
                 }
             })
@@ -196,25 +143,6 @@ function MainContent ({onNavigate}: MainContentProps) {
                         </TableBody>
                     </Table>
                 </TableContainer>
-
-                <Snackbar
-                    open={snackbarOpen}
-                    autoHideDuration={4000}
-                    TransitionComponent={Slide}
-                    transitionDuration={500}
-                    onClose={handleCloseSnackbar}
-                    anchorOrigin={{ vertical: "top", horizontal: "center"}}
-                    sx={{
-                        width: '100%'
-                    }}
-                >
-                    <Alert
-                        onClose={handleCloseSnackbar}
-                        severity={currentSnackbar?.severity}
-                    >
-                        {currentSnackbar?.message}
-                    </Alert>
-                </Snackbar>
             </Paper>
             
             <div className='button-container'>
