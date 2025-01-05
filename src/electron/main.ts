@@ -4,6 +4,7 @@ import fs from 'fs';
 import { isDev, createIpcMain, ExcelData } from './util.js'
 import { getPreloadPath } from './pathResolver.js';
 import { ExcelOperations } from './excelOperations.js';
+import { runSeleniumScript } from './script.js';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -87,5 +88,16 @@ ipc.handle('delete-from-file', async (_event, removedData: ExcelData) => {
     return { success: true }
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to delete shift'}
+  }
+})
+
+ipc.handle('run-script', async () => {
+  try {
+    console.log("Running Selenium script...")
+    await runSeleniumScript();
+    return { success: true }
+  } catch (error) {
+    console.error('Error running Selenium script:', error);
+    throw error;
   }
 })
