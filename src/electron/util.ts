@@ -41,6 +41,14 @@ export interface EventPayloadMapping {
             success: boolean;
             error?: string;
         }
+    },
+
+    'run-script': {
+        request: void,
+        response: {
+            success: boolean;
+            error?: string;
+        }
     }
     //Add more events here
 }
