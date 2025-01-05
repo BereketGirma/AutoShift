@@ -9,7 +9,7 @@ function CredentialForm() {
 
     const { enqueueSnackbar } = useSnackbar();
 
-    const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         if(!starID.trim() || !password.trim()) {
@@ -19,6 +19,7 @@ function CredentialForm() {
         }
         
         setError(false);
+        await window.electron.invoke('run-script')   
     }
 
     return (
