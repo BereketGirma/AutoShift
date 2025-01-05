@@ -119,7 +119,7 @@ function MainContent ({onNavigate}: MainContentProps) {
                             {shifts.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan = {5} align='center'>
-                                        No shifts found. Add a shift to get started!
+                                        No shifts found. Add a shift to continue!
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -149,7 +149,7 @@ function MainContent ({onNavigate}: MainContentProps) {
                 <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal}>
                     Add Shift
                 </Button>
-                <Button variant="contained" color='secondary' onClick={onNavigate}>
+                <Button variant="contained" color='secondary' onClick={onNavigate} disabled={shifts.length === 0}>
                     Continue
                 </Button>
             </div>
