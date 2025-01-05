@@ -9,10 +9,8 @@ import {
     SelectChangeEvent,
     Box,
     Typography,
-    Snackbar,
-    Alert,
-    Fade,
 } from '@mui/material';
+import { useSnackbar } from './SnackbarProvider';
 
 //Interface to handle format
 interface AddShiftModalProps {
@@ -30,8 +28,8 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
         endTime: ''
     });
 
-    //Stores error message value
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    //Function to add error messages into snackbar queue
+    const { enqueueSnackbar } = useSnackbar();
 
     /**
      * Handling changes occuring in modal such as selection or input
@@ -52,7 +50,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
      */
     const handleSave = () => {
         if(!shiftData.day || !shiftData.startTime || !shiftData.endTime){
-            setErrorMessage("Please select a day, Start time and End time.")
+            enqueueSnackbar("Please select a Day, Start time and End time.", 'error')
             return;
         }
 
@@ -60,7 +58,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
         const endTime = parseTime(shiftData.endTime);
 
         if(startTime >= endTime) {
-            setErrorMessage("Start time must be before end time.");
+            enqueueSnackbar("Start time must be before end time.", 'error');
             return;
         }
         onAddShift(shiftData);
@@ -131,8 +129,8 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
                 borderRadius: '5px',
                 boxShadow: 24,
                 p: 2,
-                width: '50vw',
-                maxWidth: '600px'
+                width: '50%',
+                maxWidth: '400px'
             }}>
                 {/* Modal title */}
                 <Typography variant='h6' component='h2' color='black'>
@@ -192,20 +190,6 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
                         ))}
                     </Select>
                 </FormControl>
-                
-                {/* Error message snackbar */}
-                {errorMessage && (
-                    <Snackbar
-                        open={true}
-                        autoHideDuration={5000}
-                        onClose={() => setErrorMessage(null)}
-                        TransitionComponent={Fade}
-                        anchorOrigin={{ vertical: 'top', horizontal: 'center'}}
-                        sx={{width:'80%'}}
-                    >
-                        <Alert severity="error">{errorMessage}</Alert>
-                    </Snackbar>
-                )}
 
                 {/* Button container */}
                 <Box sx={{ 
