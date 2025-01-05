@@ -32,12 +32,16 @@
     "fs": "^0.0.1-security",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "sheetjs-style": "^0.15.8"
+    "selenium-webdriver": "^4.27.0",
+    "sheetjs-style": "^0.15.8",
+    "unzipper": "^0.12.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@types/selenium-webdriver": "^4.1.27",
+    "@types/unzipper": "^0.10.10",
     "@vitejs/plugin-react": "^4.3.4",
     "cross-env": "^7.0.3",
     "electron": "^33.2.1",
