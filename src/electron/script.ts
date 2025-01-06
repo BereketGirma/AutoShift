@@ -9,66 +9,67 @@ import { exec } from 'child_process';
 
 // const userDataDir = app.getPath('userData');
 const driverDir = path.resolve(app.getPath('userData'), `chrome-driver`);
-const chromedriverPath = path.join(driverDir, 'chromedriver');
+const chromedriverPath = path.join(driverDir, `chromedriver-${await getPlatform()}/chromedriver`);
 
 
-function getPlatform(): string {
+async function getPlatform(): Promise<string> {
     const platform = process.platform;
-    if(platform === "win32") return "chromedriver_win32.zip"
-    if(platform === "darwin") return "chromedriver_mac64.zip"
-    if(platform === "linux") return "chromedriver_linux64.zip"
+    const arch = process.arch
+    if(platform === "win32") {
+        return "win32"
+    } else if(platform === "darwin") {
+        return arch === "arm64" ? "mac-arm64" : "mac-x64"
+    } else if(platform === "linux") {
+        return "linux64"
+    }
     throw new Error("Unsupported platform. Only Windows, MacOS and Linux are supported.")
 }
-async function fetchLatestChromedriverVersion(): Promise<string> {
+
+async function getCurrentChromeVersion(): Promise<string> {
     return new Promise((resolve, reject) => {
-        https.get('https://chromedriver.storage.googleapis.com/LATEST_RELEASE', (response: any) => {
-            if(response.statusCode !== 200) {
-                reject(new Error(`Failed to fetch Chromedriver version. HTTP Status: ${response.statusCode}`));
+        exec('/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --version', (error: any, stdout: string) => {
+            if(error) {
+                reject(new Error('Failed to get Chrome version'));
                 return;
             }
-            
-            let version = '';
-            response.on("data", (chunk: any) => {
-                version += chunk
-            });
-
-            response.on("end", () => {
-                resolve(version.trim());
-            });
-        }).on('error', (error: any) => {
-            reject(`Error fetching Chromedriver version: ${error}`)
-        });
-    });
+            const versionMatch = stdout.match(/(\d+\.\d+\.\d+\.\d+)/)
+            if(versionMatch) {
+                resolve(versionMatch[1])
+            } else {
+                reject(new Error('Failed to parse Chrome version'))
+            }
+        })
+    })
 }
 
-
-// async function getCurrentChromeVersion(): Promise<string> {
-//     return new Promise((resolve, reject) => {
-//         exec('/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --version', (error: any, stdout: string) => {
-//             if(error) {
-//                 reject(new Error('Failed to get Chrome version'));
-//                 return;
-//             }
-//             const versionMatch = stdout.match(/(\d+\.\d+\.\d+\.\d+)/)
-//             if(versionMatch) {
-//                 resolve(versionMatch[1])
-//             } else {
-//                 reject(new Error('Failed to parse Chrome version'))
-//             }
-//         })
-//     })
-// }
+async function adjustVersion(version: string): Promise<string> {
+    const versionParts = version.split(".");
+    const versionChange = Number(versionParts[-1]) - 1
+    versionParts[-1] = String(versionChange);
+    return versionParts.join('.')
+}
 
 async function downloadChromedriver(version: string): Promise<void> {
-    const platformFile = getPlatform();
-    const chromedriverURL = `https://storage.googleapis.com/chrome-for-testing-public/131.0.6778.204/mac-x64/chromedriver-mac-x64.zip`
+    const platformFile = await getPlatform();
+    const chromedriverURL = `https://storage.googleapis.com/chrome-for-testing-public/${version}/${platformFile}/chromedriver-${platformFile}.zip`
     const zipPath = path.join(driverDir, "chromedriver.zip");
 
     return new Promise((resolve, reject) => {
-        https.get(chromedriverURL, (response: any) => {
+        https.get(chromedriverURL, async (response: any) => {
             if(response.statusCode !== 200) {
-                reject(new Error(`Failed to download Chromedriver. HTTP Status: ${response.statusCode}`));
-                return
+                // reject(new Error(`Failed to download Chromedriver. HTTP Status: ${response.statusCode}`));
+                // return
+                console.log(`Version ${version} not found, attempting fallback version...`)
+
+                const fallbackVersion = await adjustVersion(version);
+                const fallbackURL = `https://storage.googleapis.com/chrome-for-testing-public/${fallbackVersion}/${platformFile}/chromedriver-${platformFile}.zip`
+                https.get(fallbackURL, (fallbackResponse: any) => {
+                    if(fallbackResponse.statusCode !== 200){
+                        console.log(`Fallback version ${fallbackVersion} failed!`)
+                        reject(new Error(`Failed to download chromedriver. HTTP Status: ${fallbackResponse.statusCode}`));
+                        return;
+                    }
+                })
             }
 
             if(!fs.existsSync(driverDir)) {
@@ -107,9 +108,9 @@ async function ensureChromedriverExists(): Promise<void> {
         console.log("Chromedriver already exists.");
     } else {
         console.log("Chromedriver not found. Fetching the latest version...");
-        const latestVersion = await fetchLatestChromedriverVersion();
-        console.log(`Latest Chromedriver version: ${latestVersion}`);
-        await downloadChromedriver(latestVersion);
+        const driverVersion = await getCurrentChromeVersion();
+        console.log(`Latest Chromedriver version: ${driverVersion}`);
+        await downloadChromedriver(driverVersion);
         console.log('Chromedriver downloaded successfully');
     }
 }
