@@ -7,7 +7,6 @@ import { ServiceBuilder } from 'selenium-webdriver/chrome.js';
 import { app } from 'electron';
 import { exec } from 'child_process';
 
-// const userDataDir = app.getPath('userData');
 const driverDir = path.resolve(app.getPath('userData'), `chrome-driver`);
 const chromedriverPath = path.join(driverDir, `chromedriver-${await getPlatform()}/chromedriver`);
 
@@ -26,8 +25,21 @@ async function getPlatform(): Promise<string> {
 }
 
 async function getCurrentChromeVersion(): Promise<string> {
+    const platform = await getPlatform();
     return new Promise((resolve, reject) => {
-        exec('/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --version', (error: any, stdout: string) => {
+        let command = "";
+        if(platform === "win32") {
+            command = 'reg query "HKEY_CURRENT_USER\\Software\\Google\\Chrome\\BLBeacon" /v version'
+        } else if(platform.startsWith("mac")) {
+            command = '/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --version'
+        } else if(platform === "linux") {
+            command = 'google-chrome --version || google-chrome-stable --version'
+        } else {
+            reject(new Error("Unsupported platform"));
+            return;
+        }
+        
+        exec(command, (error: any, stdout: string) => {
             if(error) {
                 reject(new Error('Failed to get Chrome version'));
                 return;
