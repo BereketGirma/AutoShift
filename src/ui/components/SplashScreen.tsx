@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { LinearProgress, Box, Typography } from '@mui/material';
 
 interface SplashScreenProps {
-    onInitilizationComplete: () => void;
+    onNavigate: () => void;
 }
 
-const SplashScreen: React.FC<SplashScreenProps> = ({ onInitilizationComplete }) => {
+function SplashScreen ({ onNavigate }:SplashScreenProps) {
     const [progress, setProgress] = useState<number>(0);
     const [statusText, setStatusText] = useState<string>('Initializing...');
 
@@ -28,14 +28,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onInitilizationComplete }) 
                     setTimeout(() => setProgress(i), i * 30);
                 }
 
-                setTimeout(() => onInitilizationComplete(), 4000);
+                setTimeout(() => onNavigate(), 4000);
             } catch (error) {
                 console.error('Error during initialization:',error);
             }
         };
         
         initializeApp();
-    }, [onInitilizationComplete]);
+    }, [onNavigate]);
 
     return (
         <div className='splash-screen'>

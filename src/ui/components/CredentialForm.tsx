@@ -2,7 +2,11 @@ import React, { useState } from "react";
 import { Box, Button, TextField, Typography, Container } from "@mui/material";
 import { useSnackbar } from "./SnackbarProvider";
 
-function CredentialForm() {
+interface CredentialFormProps {
+    onNavigate: () => void;
+}
+
+function CredentialForm({onNavigate}: CredentialFormProps) {
     const [starID, setStarID] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [error, setError] = useState<boolean>(false);
@@ -17,7 +21,7 @@ function CredentialForm() {
             setError(true)
             return
         }
-        
+        onNavigate()
         setError(false);
         await window.electron.invoke('run-script')   
     }

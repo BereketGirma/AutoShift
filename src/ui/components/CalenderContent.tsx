@@ -10,7 +10,7 @@ import {
 import dayjs, {Dayjs} from "dayjs";
 
 interface CalanderContentProps {
-    onNavigate: () => void
+    onNavigate: () => void;
 }
 
 function CalenderContent({onNavigate}: CalanderContentProps) {

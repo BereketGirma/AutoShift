@@ -1,11 +1,14 @@
 import { useState } from 'react'
+
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { Container } from '@mui/material';
+
 import SplashScreen from './components/SplashScreen';
 import MainContent from './components/MainContent';
 import CalenderContent from './components/CalenderContent'
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Container } from '@mui/material';
 import CredentialForm from './components/CredentialForm';
 import SnackbarProvider from './components/SnackbarProvider';
+import LoadingScreen from './components/LoadingScreen';
 
 const theme = createTheme({
   palette: {
@@ -22,27 +25,28 @@ const theme = createTheme({
 })
 
 const App: React.FC = () => {
-  const [initialized, setInitilized] = useState(false);
-  const [currentPage, setCurrentPage] = useState<"main" | "calander">("main");
+  const [currentPage, setCurrentPage] = useState<"splashScreen" | "main" | "calender" | "loading">("splashScreen");
 
-  const navigateTo = (page: "main" | "calander") => {
+  const navigateTo = (page: "main" | "calender" | "loading") => {
     setCurrentPage(page)
+  }
+  
+  const pages = {
+    splashScreen: <SplashScreen onNavigate={() => navigateTo('main')}/>,
+    main: <MainContent onNavigate={() => navigateTo('calender')}/>,
+    calender: (
+      <Container className='home'>
+        <CalenderContent onNavigate={() => navigateTo('main')}/>
+        <CredentialForm onNavigate={() => navigateTo('loading')}/>
+      </Container>
+    ),
+    loading: <LoadingScreen />
   }
 
   return (
     <ThemeProvider theme={theme}>
       <SnackbarProvider>
-        {!initialized ? (
-          <SplashScreen onInitilizationComplete={() => setInitilized(true)} />
-          ) : currentPage === "main" ? (
-          <MainContent onNavigate={() => navigateTo('calander')}/>
-          ) : (
-            
-              <Container className='home'>
-                <CalenderContent onNavigate={() => navigateTo('main')} />
-                <CredentialForm />
-              </Container>          
-          )}
+        {pages[currentPage]}
       </SnackbarProvider>
     </ThemeProvider>
 
