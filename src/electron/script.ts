@@ -6,10 +6,15 @@ import { Builder } from 'selenium-webdriver';
 import { ServiceBuilder } from 'selenium-webdriver/chrome.js';
 import { app } from 'electron';
 import { exec } from 'child_process';
+import { BrowserWindow } from 'electron'
 
 const driverDir = path.resolve(app.getPath('userData'), `chrome-driver`);
-const chromedriverPath = path.join(driverDir, `chromedriver-${await getPlatform()}/chromedriver`);
+const platform = await getPlatform();
+const chromedriverPath = path.join(driverDir, `chromedriver-${await getPlatform()}${platform === 'win32'? '/chromedriver.exe' : '/chromedriver'}`);
 
+function sendProgressUpdates(window: BrowserWindow, data: string, final: boolean): void {
+    window.webContents.send('progress-update', { success:true, message: data, isFinal: final})
+}
 
 async function getPlatform(): Promise<string> {
     const platform = process.platform;
@@ -115,21 +120,25 @@ async function downloadChromedriver(version: string): Promise<void> {
     });
 }
 
-async function ensureChromedriverExists(): Promise<void> {
+async function ensureChromedriverExists(window: BrowserWindow): Promise<void> {
     if(fs.existsSync(chromedriverPath)) {
-        console.log("Chromedriver already exists.");
+        console.log("Chromedriver already exists.")
+        sendProgressUpdates(window, "Chromedriver already exists.", false)
     } else {
-        console.log("Chromedriver not found. Fetching the latest version...");
+        sendProgressUpdates(window, "Chromedriver not found. Fetching the latest version...", false);
         const driverVersion = await getCurrentChromeVersion();
-        console.log(`Latest Chromedriver version: ${driverVersion}`);
+        sendProgressUpdates(window, `Latest Chromedriver version: ${driverVersion}`, false);
         await downloadChromedriver(driverVersion);
-        console.log('Chromedriver downloaded successfully');
+        sendProgressUpdates(window, 'Chromedriver downloaded successfully', false);
     }
 }
 
-async function runSeleniumScript(): Promise<void> {
-    await ensureChromedriverExists();
+async function runSeleniumScript(window: any): Promise<void> {
+    sendProgressUpdates(window, 'Checking for chromedriver...', false)
 
+    await ensureChromedriverExists(window);
+
+    sendProgressUpdates(window, 'Starting script', false)
     const driver = await new Builder()
         .forBrowser('chrome')
         .setChromeService(new ServiceBuilder(chromedriverPath))
@@ -140,6 +149,9 @@ async function runSeleniumScript(): Promise<void> {
         console.log("Page loaded!");
     } finally {
         await driver.quit();
+        console.log("Script Finished")
+        sendProgressUpdates(window, 'Script Finished', true);
+
     }
 }
 
