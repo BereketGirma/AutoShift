@@ -49,6 +49,14 @@ export interface EventPayloadMapping {
             success: boolean;
             error?: string;
         }
+    },
+    'progress-update': {
+        request: void,
+        response: {
+            success: boolean;
+            message: string;
+            isFinal: boolean;
+        }
     }
     //Add more events here
 }

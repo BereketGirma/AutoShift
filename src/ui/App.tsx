@@ -40,7 +40,7 @@ const App: React.FC = () => {
         <CredentialForm onNavigate={() => navigateTo('loading')}/>
       </Container>
     ),
-    loading: <LoadingScreen />
+    loading: <LoadingScreen onNavigate={() => navigateTo('main')}/>
   }
 
   return (
