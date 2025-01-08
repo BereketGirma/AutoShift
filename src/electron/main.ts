@@ -94,7 +94,11 @@ ipc.handle('delete-from-file', async (_event, removedData: ExcelData) => {
 ipc.handle('run-script', async () => {
   try {
     console.log("Running Selenium script...")
-    await runSeleniumScript();
+    if (mainWindow) {
+      await runSeleniumScript(mainWindow);
+    } else {
+      throw new Error('Main window is not initialized');
+    }
     return { success: true }
   } catch (error) {
     console.error('Error running Selenium script:', error);
