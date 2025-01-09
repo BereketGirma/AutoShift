@@ -5,6 +5,7 @@ import { isDev, createIpcMain, ExcelData } from './util.js'
 import { getPreloadPath } from './pathResolver.js';
 import { ExcelOperations } from './excelOperations.js';
 import { runSeleniumScript } from './script.js';
+import { Dayjs } from 'dayjs';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -91,11 +92,11 @@ ipc.handle('delete-from-file', async (_event, removedData: ExcelData) => {
   }
 })
 
-ipc.handle('run-script', async () => {
+ipc.handle('run-script', async (_event, startDate: string, endDate: string) => {
   try {
     console.log("Running Selenium script...")
     if (mainWindow) {
-      await runSeleniumScript(mainWindow);
+      await runSeleniumScript(mainWindow, await excelOps.readExcelFile(), startDate, endDate);
     } else {
       throw new Error('Main window is not initialized');
     }
