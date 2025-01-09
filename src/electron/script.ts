@@ -2,11 +2,13 @@ import https from 'https';
 import fs from 'fs';
 import path from'path';
 import unzipper from 'unzipper';
-import { Builder } from 'selenium-webdriver';
+import { Builder, By, until } from 'selenium-webdriver';
 import { ServiceBuilder } from 'selenium-webdriver/chrome.js';
 import { app } from 'electron';
 import { exec } from 'child_process';
 import { BrowserWindow } from 'electron'
+import { ExcelData } from './util.js';
+import dayjs, {Dayjs} from 'dayjs';
 
 const driverDir = path.resolve(app.getPath('userData'), `chrome-driver`);
 const platform = await getPlatform();
@@ -133,10 +135,75 @@ async function ensureChromedriverExists(window: BrowserWindow): Promise<void> {
     }
 }
 
-async function runSeleniumScript(window: any): Promise<void> {
+async function formatTime(time: string): Promise<string> {
+    let formattedTime = time.replace(/[:\s]/g, "");
+
+    const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i)
+    if(match) {
+        let hour = match[1];
+        const minute = match[2];
+        const period = match[3];
+
+        if(hour.length === 1){
+            hour = "0" + hour;
+        }
+
+        formattedTime = `${hour}${minute}${period}`
+    }
+    console.log(formattedTime)
+    return formattedTime;
+}
+
+async function generateSchedule(shifts: ExcelData[], startDate: string, endDate: string){
+    const schedule: { date: string; startTime: string; endTime: string }[] = [];
+
+    const dayOfWeekMap = {
+        Sunday: 0,
+        Monday: 1,
+        Tuesday: 2,
+        Wednesday: 3,
+        Thursday: 4,
+        Friday: 5,
+        Saturday: 6
+    }
+
+    const start = dayjs(startDate)
+    const end = dayjs(endDate)
+
+    if(!start.isValid() || !end.isValid()){
+        console.log('something aint right')
+    }
+    let currentDate = start
+    while (currentDate.isBefore(end) || currentDate.isSame(end)){
+
+        const currentDayOfWeek = currentDate.day()
+        for(const shift of shifts){
+            if(dayOfWeekMap[shift.day as keyof typeof dayOfWeekMap] === currentDayOfWeek){
+                console.log("Working:")
+                schedule.push({
+                    date: currentDate.format('YYYYMMDD'),
+                    startTime: await formatTime(shift.startTime),
+                    endTime: await formatTime(shift.endTime)
+                })
+            }
+        }
+           
+        currentDate = currentDate.add(1,'day')
+    }
+
+    return schedule
+}
+
+async function runSeleniumScript(window: any, data: ExcelData[], startDate: string, endDate: string): Promise<void> {
     sendProgressUpdates(window, 'Checking for chromedriver...', false)
 
     await ensureChromedriverExists(window);
+    const shiftQueue = await generateSchedule(data, startDate, endDate)
+
+    if(shiftQueue.length === 0){
+        sendProgressUpdates(window, "Time frame window given is too small to run automation.", true)
+        return
+    }
 
     sendProgressUpdates(window, 'Starting script', false)
     const driver = await new Builder()
@@ -145,13 +212,44 @@ async function runSeleniumScript(window: any): Promise<void> {
         .build();
 
     try{
-        await driver.get("https://example.com");
-        console.log("Page loaded!");
+        await driver.get("https://eservices.minnstate.edu/finance-student/timeWorked.do?campusid=071");
+        console.log("Enter your credentials now")
+
+        const elementToWaitFor = By.id('addTime')
+        await driver.wait(until.elementLocated(elementToWaitFor), 120000)
+
+        
+        while(shiftQueue.length > 0){
+            //Dequeue the first shift
+            const currentShift = shiftQueue.shift()
+            if(!currentShift){
+                break
+            }
+
+            const addTimeButton = await driver.findElement(elementToWaitFor)
+            addTimeButton.click()
+
+            const startDateSelector = await driver.wait(until.elementLocated(By.id("date")), 5000);
+            const startDateOption = await startDateSelector.findElement(By.css(`option[value="${currentShift.date}"]`))
+            await startDateOption.click()
+
+            const startTimeSelector = await driver.findElement(By.id("startTime"));
+            const startTimeOption = await startTimeSelector.findElement(By.css(`option[value="${currentShift.startTime}"]`))
+            await startTimeOption.click()
+
+            const endTimeSelector = await driver.findElement(By.id("endTime"));
+            const endTimeOption = await endTimeSelector.findElement(By.css(`option[value="${currentShift.endTime}"]`))
+            await endTimeOption.click()
+
+            const saveTimeButton = await driver.findElement(By.id("timeSaveOrAddId"));
+            await saveTimeButton.click()
+        }
+
+        await driver.sleep(3000)
+
     } finally {
         await driver.quit();
-        console.log("Script Finished")
-        sendProgressUpdates(window, 'Script Finished', true);
-
+        sendProgressUpdates(window, "Shift's successfully added!", true);
     }
 }
 
