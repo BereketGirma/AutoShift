@@ -6,7 +6,6 @@ import { Container } from '@mui/material';
 import SplashScreen from './components/SplashScreen';
 import MainContent from './components/MainContent';
 import CalenderContent from './components/CalenderContent'
-import CredentialForm from './components/CredentialForm';
 import SnackbarProvider from './components/SnackbarProvider';
 import LoadingScreen from './components/LoadingScreen';
 
@@ -36,8 +35,10 @@ const App: React.FC = () => {
     main: <MainContent onNavigate={() => navigateTo('calender')}/>,
     calender: (
       <Container className='home'>
-        <CalenderContent onNavigate={() => navigateTo('main')}/>
-        <CredentialForm onNavigate={() => navigateTo('loading')}/>
+        <CalenderContent 
+          onNavigateToMain={() => navigateTo('main')}
+          onNavigateToLoading={() => navigateTo('loading')}
+        />
       </Container>
     ),
     loading: <LoadingScreen onNavigate={() => navigateTo('main')}/>

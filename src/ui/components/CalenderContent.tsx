@@ -10,10 +10,11 @@ import {
 import dayjs, {Dayjs} from "dayjs";
 
 interface CalanderContentProps {
-    onNavigate: () => void;
+    onNavigateToMain: () => void;
+    onNavigateToLoading: () => void;
 }
 
-function CalenderContent({onNavigate}: CalanderContentProps) {
+function CalenderContent({onNavigateToMain, onNavigateToLoading}: CalanderContentProps) {
     const [selectedStartDate, setSelectedStartDate] = useState<Dayjs | null>(dayjs());
     const [selectedEndDate, setSelectedEndDate] = useState<Dayjs | null>(dayjs());
 
@@ -31,7 +32,11 @@ function CalenderContent({onNavigate}: CalanderContentProps) {
             setSelectedEndDate(newDate)
         }
     }
-    
+
+    const handleSubmit = async() => {
+        onNavigateToLoading()
+        await window.electron.invoke('run-script', selectedStartDate?.format('YYYY-MM-DD'), selectedEndDate?.format('YYYY-MM-DD'))   
+    }
     
     return (
         <Container 
@@ -50,7 +55,7 @@ function CalenderContent({onNavigate}: CalanderContentProps) {
                     mb: 2
                 }}
             >
-                <Button onClick={onNavigate} variant="outlined">
+                <Button onClick={onNavigateToMain} variant="outlined">
                     Back
                 </Button>
             </Box>
@@ -99,6 +104,16 @@ function CalenderContent({onNavigate}: CalanderContentProps) {
                     </LocalizationProvider>
                 </Box>
             </Container>
+
+            <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                sx={{marginTop: 2, position:'relative'}}
+                onClick={handleSubmit}
+            >
+                Run Script
+            </Button>
         </Container>
     )
 }
