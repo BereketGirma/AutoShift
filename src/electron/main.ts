@@ -1,4 +1,4 @@
-import {app, BrowserWindow } from 'electron';
+import {app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { isDev, createIpcMain, ExcelData } from './util.js'
@@ -105,4 +105,13 @@ ipc.handle('run-script', async (_event, startDate: string, endDate: string) => {
     console.error('Error running Selenium script:', error);
     throw error;
   }
+})
+
+ipc.handle('confirm-or-cancel', async (_event: any, response: { confirmed: boolean }) => {
+  const window = BrowserWindow.getFocusedWindow();
+  if(!window) throw new Error('No window available to handle confirmation.')
+
+  ipcMain.emit('confirm-or-cancel', null, response)
+
+  return response;
 })

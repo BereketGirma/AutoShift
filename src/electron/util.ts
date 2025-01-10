@@ -50,12 +50,20 @@ export interface EventPayloadMapping {
             error?: string;
         }
     },
+
     'progress-update': {
         request: void,
         response: {
             success: boolean;
             message: string;
             isFinal: boolean;
+        }
+    },
+
+    'confirm-or-cancel': {
+        request: void,
+        response: {
+            confirmed: boolean
         }
     }
     //Add more events here
