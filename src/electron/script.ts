@@ -30,7 +30,6 @@ function waitForConfirmation(window: BrowserWindow, shift: ShiftFormat): Promise
         window.webContents.send('confirm-or-cancel',shift)
 
         ipcMain.once('confirm-or-cancel', (_event, response: { confirmed: boolean}) => {
-            console.log('User responded:', response.confirmed)
             resolve(response.confirmed);
         })
     })
@@ -94,15 +93,10 @@ async function downloadChromedriver(version: string): Promise<void> {
     return new Promise((resolve, reject) => {
         https.get(chromedriverURL, async (response: any) => {
             if(response.statusCode !== 200) {
-                // reject(new Error(`Failed to download Chromedriver. HTTP Status: ${response.statusCode}`));
-                // return
-                console.log(`Version ${version} not found, attempting fallback version...`)
-
                 const fallbackVersion = await adjustVersion(version);
                 const fallbackURL = `https://storage.googleapis.com/chrome-for-testing-public/${fallbackVersion}/${platformFile}/chromedriver-${platformFile}.zip`
                 https.get(fallbackURL, (fallbackResponse: any) => {
                     if(fallbackResponse.statusCode !== 200){
-                        console.log(`Fallback version ${fallbackVersion} failed!`)
                         reject(new Error(`Failed to download chromedriver. HTTP Status: ${fallbackResponse.statusCode}`));
                         return;
                     }
@@ -142,7 +136,6 @@ async function downloadChromedriver(version: string): Promise<void> {
 
 async function ensureChromedriverExists(window: BrowserWindow): Promise<void> {
     if(fs.existsSync(chromedriverPath)) {
-        console.log("Chromedriver already exists.")
         sendProgressUpdates(window, "Chromedriver already exists.", false)
     } else {
         sendProgressUpdates(window, "Chromedriver not found. Fetching the latest version...", false);
@@ -229,15 +222,12 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
         .setChromeOptions(options)
         .setChromeService(new ServiceBuilder(chromedriverPath))
         .build();
-
-
         
 
     const shiftsSkipped: { date: string; startTime: string; endTime: string }[] = [];
 
     try{
         await driver.get("https://eservices.minnstate.edu/finance-student/timeWorked.do?campusid=071");
-        console.log("Enter your credentials now")
 
         const elementToWaitFor = By.id('addTime')
         await driver.wait(until.elementLocated(elementToWaitFor), 120000)
@@ -255,26 +245,21 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
             const addTimeButton = await driver.findElement(elementToWaitFor)
             addTimeButton.click()
 
-            const startDateSelector = await driver.wait(until.elementLocated(By.id("date")), 5000);
+            const startDateSelector = await driver.wait(until.elementLocated(By.id("date")), 1000);
             const startDateElement = By.css(`option[value="${currentShift.date}"]`)
 
             if(await elementExists(driver, startDateElement)){
                 const startDateOption = await startDateSelector.findElement(By.css(`option[value="${currentShift.date}"]`))
                 await startDateOption.click()
             } else {
-                console.log('Date to select not found:', currentShift.date)
-                const cancelButton = await driver.wait(until.elementLocated(By.className("cancelButton")), 5000)
+                const cancelButton = await driver.wait(until.elementLocated(By.className("cancelButton")), 1000)
                 await cancelButton.click()
-                console.log('Cancelling...')
 
-                const dateInput = await driver.wait(until.elementLocated(By.id('payPeriodDate2')), 5000)
+                const dateInput = await driver.wait(until.elementLocated(By.id('payPeriodDate2')), 1000)
                 await dateInput.clear()
                 await dateInput.sendKeys(`${currentShift.date.slice(4,6)}/${currentShift.date.slice(-2)}/${currentShift.date.slice(0,4)}`)
 
-                console.log('Clicked on calenderIcon')
-                console.log(`${currentShift.date.slice(4,6)}/${currentShift.date.slice(-2)}/${currentShift.date.slice(0,4)}`)
-
-                const retrieveButton = await driver.wait(until.elementLocated(By.id('retrieveDateLink')));
+                const retrieveButton = await driver.wait(until.elementLocated(By.id('retrieveDateLink')), 1000);
                 await retrieveButton.click()
 
                 const addTimeButton = await driver.findElement(elementToWaitFor)
@@ -282,28 +267,26 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
             }
 
 
-            const startTimeSelector = await driver.wait(until.elementLocated(By.id("startTime")));
+            const startTimeSelector = await driver.wait(until.elementLocated(By.id("startTime")), 1000);
             const startTimeOption = await startTimeSelector.findElement(By.css(`option[value="${currentShift.startTime}"]`))
             await startTimeOption.click()
 
-            const endTimeSelector = await driver.wait(until.elementLocated(By.id("endTime")));
+            const endTimeSelector = await driver.wait(until.elementLocated(By.id("endTime")), 1000);
             const endTimeOption = await endTimeSelector.findElement(By.css(`option[value="${currentShift.endTime}"]`))
             await endTimeOption.click()
 
             const saveTimeButton = await driver.findElement(By.id("timeSaveOrAddId"));
             await saveTimeButton.click()
 
-
-            if(await driver.findElement(By.className("alert-msg"))) {
+            
+            if(await elementExists(driver, By.id("errorMessageHolder"))) {
                 shiftsSkipped.push({
                     date: currentShift.date,
                     startTime: currentShift.startTime,
                     endTime: currentShift.endTime
                 })
 
-                if(await driver.findElement(By.id("classReasonCode"))) {
-                    console.log("Trying to add shift that clashes with a class")
-
+                if(await elementExists(driver, By.id("classReasonCode"))) {
                     const userConfirmed = await waitForConfirmation(window, currentShift)
 
                     if(userConfirmed){
@@ -322,14 +305,12 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
             }
         }
 
-        await driver.sleep(5000)
         sendProgressUpdates(window, "Shift's successfully added!", true);
+        await driver.sleep(5000)
         
-        console.log(shiftsSkipped)
         return
 
     } catch(error){
-        console.log("Error while adding shifts:", error)
         sendProgressUpdates(window, "Error occured while adding shifts.", true)
     } finally {
         await driver.quit();
