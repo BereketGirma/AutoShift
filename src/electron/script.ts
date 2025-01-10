@@ -3,19 +3,37 @@ import fs from 'fs';
 import path from'path';
 import unzipper from 'unzipper';
 import { Builder, By, until } from 'selenium-webdriver';
-import { ServiceBuilder } from 'selenium-webdriver/chrome.js';
-import { app } from 'electron';
+import { Options, ServiceBuilder } from 'selenium-webdriver/chrome.js';
+import { app, ipcMain } from 'electron';
 import { exec } from 'child_process';
 import { BrowserWindow } from 'electron'
 import { ExcelData } from './util.js';
-import dayjs, {Dayjs} from 'dayjs';
+import dayjs from 'dayjs';
+
+
+interface ShiftFormat {
+    date: string;
+    startTime: string;
+    endTime: string;
+}
 
 const driverDir = path.resolve(app.getPath('userData'), `chrome-driver`);
 const platform = await getPlatform();
-const chromedriverPath = path.join(driverDir, `chromedriver-${await getPlatform()}${platform === 'win32'? '/chromedriver.exe' : '/chromedriver'}`);
+const chromedriverPath = path.join(driverDir, `chromedriver-${platform}/${platform === 'win32'? '/chromedriver.exe' : '/chromedriver'}`);
 
 function sendProgressUpdates(window: BrowserWindow, data: string, final: boolean): void {
     window.webContents.send('progress-update', { success:true, message: data, isFinal: final})
+}
+
+function waitForConfirmation(window: BrowserWindow, shift: ShiftFormat): Promise<boolean> {
+    return new Promise((resolve) => {
+        window.webContents.send('confirm-or-cancel',shift)
+
+        ipcMain.once('confirm-or-cancel', (_event, response: { confirmed: boolean}) => {
+            console.log('User responded:', response.confirmed)
+            resolve(response.confirmed);
+        })
+    })
 }
 
 async function getPlatform(): Promise<string> {
@@ -150,7 +168,6 @@ async function formatTime(time: string): Promise<string> {
 
         formattedTime = `${hour}${minute}${period}`
     }
-    console.log(formattedTime)
     return formattedTime;
 }
 
@@ -179,7 +196,6 @@ async function generateSchedule(shifts: ExcelData[], startDate: string, endDate:
         const currentDayOfWeek = currentDate.day()
         for(const shift of shifts){
             if(dayOfWeekMap[shift.day as keyof typeof dayOfWeekMap] === currentDayOfWeek){
-                console.log("Working:")
                 schedule.push({
                     date: currentDate.format('YYYYMMDD'),
                     startTime: await formatTime(shift.startTime),
@@ -206,10 +222,18 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
     }
 
     sendProgressUpdates(window, 'Starting script', false)
+
+    const options = new Options()
     const driver = await new Builder()
         .forBrowser('chrome')
+        .setChromeOptions(options)
         .setChromeService(new ServiceBuilder(chromedriverPath))
         .build();
+
+
+        
+
+    const shiftsSkipped: { date: string; startTime: string; endTime: string }[] = [];
 
     try{
         await driver.get("https://eservices.minnstate.edu/finance-student/timeWorked.do?campusid=071");
@@ -218,6 +242,8 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
         const elementToWaitFor = By.id('addTime')
         await driver.wait(until.elementLocated(elementToWaitFor), 120000)
 
+        const driverWindow = driver.manage().window()
+        // await driverWindow.minimize()
         
         while(shiftQueue.length > 0){
             //Dequeue the first shift
@@ -230,26 +256,96 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
             addTimeButton.click()
 
             const startDateSelector = await driver.wait(until.elementLocated(By.id("date")), 5000);
-            const startDateOption = await startDateSelector.findElement(By.css(`option[value="${currentShift.date}"]`))
-            await startDateOption.click()
+            const startDateElement = By.css(`option[value="${currentShift.date}"]`)
 
-            const startTimeSelector = await driver.findElement(By.id("startTime"));
+            if(await elementExists(driver, startDateElement)){
+                const startDateOption = await startDateSelector.findElement(By.css(`option[value="${currentShift.date}"]`))
+                await startDateOption.click()
+            } else {
+                console.log('Date to select not found:', currentShift.date)
+                const cancelButton = await driver.wait(until.elementLocated(By.className("cancelButton")), 5000)
+                await cancelButton.click()
+                console.log('Cancelling...')
+
+                const dateInput = await driver.wait(until.elementLocated(By.id('payPeriodDate2')), 5000)
+                await dateInput.clear()
+                await dateInput.sendKeys(`${currentShift.date.slice(4,6)}/${currentShift.date.slice(-2)}/${currentShift.date.slice(0,4)}`)
+
+                console.log('Clicked on calenderIcon')
+                console.log(`${currentShift.date.slice(4,6)}/${currentShift.date.slice(-2)}/${currentShift.date.slice(0,4)}`)
+
+                const retrieveButton = await driver.wait(until.elementLocated(By.id('retrieveDateLink')));
+                await retrieveButton.click()
+
+                const addTimeButton = await driver.findElement(elementToWaitFor)
+                addTimeButton.click()
+            }
+
+
+            const startTimeSelector = await driver.wait(until.elementLocated(By.id("startTime")));
             const startTimeOption = await startTimeSelector.findElement(By.css(`option[value="${currentShift.startTime}"]`))
             await startTimeOption.click()
 
-            const endTimeSelector = await driver.findElement(By.id("endTime"));
+            const endTimeSelector = await driver.wait(until.elementLocated(By.id("endTime")));
             const endTimeOption = await endTimeSelector.findElement(By.css(`option[value="${currentShift.endTime}"]`))
             await endTimeOption.click()
 
             const saveTimeButton = await driver.findElement(By.id("timeSaveOrAddId"));
             await saveTimeButton.click()
+
+
+            if(await driver.findElement(By.className("alert-msg"))) {
+                shiftsSkipped.push({
+                    date: currentShift.date,
+                    startTime: currentShift.startTime,
+                    endTime: currentShift.endTime
+                })
+
+                if(await driver.findElement(By.id("classReasonCode"))) {
+                    console.log("Trying to add shift that clashes with a class")
+
+                    const userConfirmed = await waitForConfirmation(window, currentShift)
+
+                    if(userConfirmed){
+                        const continueButton = await driver.findElement(By.id("continueId"))
+                        await continueButton.click()
+                        continue
+                    } else {
+                        const goBackButton = await driver.findElement(By.className("cancelOnWarningButton"))
+                        await goBackButton.click()
+                        continue
+                    }
+                }
+
+                const cancelButton = await driver.wait(until.elementLocated(By.className("cancelButton")))
+                await cancelButton.click()
+            }
         }
 
-        await driver.sleep(3000)
+        await driver.sleep(5000)
+        sendProgressUpdates(window, "Shift's successfully added!", true);
+        
+        console.log(shiftsSkipped)
+        return
 
+    } catch(error){
+        console.log("Error while adding shifts:", error)
+        sendProgressUpdates(window, "Error occured while adding shifts.", true)
     } finally {
         await driver.quit();
-        sendProgressUpdates(window, "Shift's successfully added!", true);
+    }
+}
+
+
+async function elementExists(driver: any, element: any): Promise<boolean>{
+    try{
+        await driver.findElement(element)
+        return true;
+    } catch (error: any) {
+        if(error.name === "NoSuchElementError") {
+            return false;
+        }
+        throw error
     }
 }
 
