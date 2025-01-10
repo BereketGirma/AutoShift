@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Typography, Box, CircularProgress, Button } from "@mui/material";
 import { CheckCircleRounded } from "@mui/icons-material";
+import ConfirmationModal from './ConfirmationModal';
 
 interface LoadingScreenProps {
     onNavigate: () => void;
@@ -95,6 +96,8 @@ function LoadingScreen({onNavigate}: LoadingScreenProps) {
                     </Button>
                     ) : (<></>)}
             </Box>
+
+            <ConfirmationModal />
         </div>
     )
 }
