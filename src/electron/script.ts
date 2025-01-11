@@ -296,7 +296,6 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
                     } else {
                         const goBackButton = await driver.findElement(By.className("cancelOnWarningButton"))
                         await goBackButton.click()
-                        continue
                     }
                 }
 
@@ -311,8 +310,10 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
         return
 
     } catch(error){
+        console.log(error)
         sendProgressUpdates(window, "Error occured while adding shifts.", true)
     } finally {
+        console.log(shiftsSkipped)
         await driver.quit();
     }
 }
