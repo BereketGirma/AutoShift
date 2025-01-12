@@ -2,15 +2,22 @@
     "appId": "com.bereket-girma.autoshift",
     "files": ["dist-electron", "dist-react"],
     "extraResources": ["dist-electron/preload.cjs"],
-    "icon": "./src/ui/logo/logo-color.png", 
     "mac": {
-        "target": "dmg"
+        "target": ["dmg", "zip"],
+        "icon": "./src/ui/logo/mac/icon.icns",
+        "category": "public.app-category.productivity"
     },
     "linux": {
         "target": "AppImage"
     },
     "win": {
         "target": ["portable", "msi"],
-        "signAndEditExecutable": false
+        "signAndEditExecutable": false,
+        "icon": "./src/ui/logo/win/icon.ico"
+    },
+    "publish": {
+        "provider": "github",
+        "owner": "BereketGirma",
+        "repo": "AutoShift"
     }
 }
