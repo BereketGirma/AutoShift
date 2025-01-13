@@ -8,6 +8,7 @@ import MainContent from './components/MainContent';
 import CalenderContent from './components/CalenderContent'
 import SnackbarProvider from './components/SnackbarProvider';
 import LoadingScreen from './components/LoadingScreen';
+import UpdateChecker from './components/updateChecker';
 
 const theme = createTheme({
   palette: {
@@ -24,7 +25,7 @@ const theme = createTheme({
 })
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<"splashScreen" | "main" | "calender" | "loading">("splashScreen");
+  const [currentPage, setCurrentPage] = useState<"splashScreen" | "main" | "calender" | "loading" | "update">("update");
 
   const navigateTo = (page: "main" | "calender" | "loading") => {
     setCurrentPage(page)
@@ -41,7 +42,8 @@ const App: React.FC = () => {
         />
       </Container>
     ),
-    loading: <LoadingScreen onNavigate={() => navigateTo('main')}/>
+    loading: <LoadingScreen onNavigate={() => navigateTo('main')}/>,
+    update: <UpdateChecker onNavigate={() => navigateTo('main')} />,
   }
 
   return (
