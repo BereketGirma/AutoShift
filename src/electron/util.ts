@@ -65,6 +65,22 @@ export interface EventPayloadMapping {
         response: {
             confirmed: boolean
         }
+    },
+    
+    'check-for-updates': {
+        request: void,
+        response: {
+            success: boolean,
+            message: string
+        }
+    },
+
+    'quit-and-install': {
+        request: void,
+        response: {
+            success: boolean,
+            message: string
+        }
     }
     //Add more events here
 }
