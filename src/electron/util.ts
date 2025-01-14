@@ -81,6 +81,24 @@ export interface EventPayloadMapping {
             success: boolean,
             message: string
         }
+    },
+
+    'start-download': {
+        request: void,
+        response: {
+            succcess: boolean,
+            message: string
+        }
+    },
+
+    'open-external': {
+        request: { url: string },
+        response: void
+    },
+
+    'get-platform': {
+        request: void,
+        response: { platform: string }
     }
     //Add more events here
 }
@@ -97,4 +115,17 @@ export function createIpcMain() {
             return ipcMain.handle(channel, handler);
         }
     }
+}
+
+export async function getPlatform(): Promise<string> {
+    const platform = process.platform;
+    const arch = process.arch
+    if(platform === "win32") {
+        return "win32"
+    } else if(platform === "darwin") {
+        return arch === "arm64" ? "mac-arm64" : "mac-x64"
+    } else if(platform === "linux") {
+        return "linux64"
+    }
+    throw new Error("Unsupported platform. Only Windows, MacOS and Linux are supported.")
 }
