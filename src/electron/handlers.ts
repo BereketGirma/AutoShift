@@ -1,9 +1,10 @@
 import { ExcelOperations } from './excelOperations.js';
 import { runSeleniumScript } from './script.js';
 import fs from 'fs';
-import { createIpcMain, ExcelData } from './util.js'
-import { ipcMain, BrowserWindow, AutoUpdater } from 'electron';
+import { createIpcMain, ExcelData, getPlatform } from './util.js'
+import { ipcMain, BrowserWindow, shell } from 'electron';
 import { AppUpdater } from 'electron-updater';
+import { platform } from 'os';
 
 export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppUpdater) {
     const ipc = createIpcMain()
@@ -19,24 +20,44 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     })
 
     ipc.handle('quit-and-install', () => {
-        autoUpdater.quitAndInstall();
-        return { success: true, message: 'App is updating...' }
+        try{
+            autoUpdater.quitAndInstall(false, true);
+            return { success: true, message: 'App is updating...' }
+        } catch (error: any) {
+            return { success: false, message: error.message || 'Failed to install updates'}
+        }
+   
+    })
+
+    ipc.handle('start-download', async () => {
+        console.log('Attempting to start download')
+        try{
+            await autoUpdater.downloadUpdate()
+            console.log('Download started successfully.')
+            return { succcess: true, message: 'Downloading update' }
+        } catch (error: any) {
+            console.error('Error starting download:', error)
+            return { succcess: false, message: error.message }
+        }
     })
 
     autoUpdater.on('update-available', () => {
-        mainWindow.webContents.send('update-available')
+        mainWindow.webContents.send('update-status', { status: 'update-available' })
     });
 
     autoUpdater.on('update-not-available', () => {
-        mainWindow.webContents.send('updates-not-available');
+        mainWindow.webContents.send('update-status', { status: 'no-updates' });
     });
 
     autoUpdater.on('download-progress', (progress) => {
-        mainWindow.webContents.send('download-progress', progress);
+        mainWindow.webContents.send('update-status',{
+            status: 'downloading',
+            progress: progress.percent
+        });
     });
 
     autoUpdater.on('update-downloaded', () => {
-        mainWindow.webContents.send('update-downloaded');
+        mainWindow.webContents.send('update-status', { status: 'downloaded' });
     });
 
     ipc.handle('check-and-create-file', async () => {
@@ -97,6 +118,14 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         ipcMain.emit('confirm-or-cancel', null, response)
 
         return response;
+    })
+
+    ipc.handle('open-external', async (_event, url: string) => {
+        await shell.openExternal(url)
+    })
+
+    ipc.handle('get-platform', async () => {
+        return { platform: await getPlatform()}
     })
 
 }
