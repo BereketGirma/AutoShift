@@ -11,9 +11,10 @@
         "target": "AppImage"
     },
     "win": {
-        "target": ["portable", "msi"],
+        "target": ["nsis", "msi"],
         "signAndEditExecutable": false,
-        "icon": "./src/ui/logo/win/icon.ico"
+        "icon": "./src/ui/logo/win/icon.ico",
+        "artifact": "${productName}-Setup-${version}.exe"
     },
     "publish": {
         "provider": "github",
