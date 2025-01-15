@@ -9,7 +9,7 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
     const [status, setStatus] = useState("idle");
     const [progress, setProgress] = useState(0);
 
-    let platform: string | null = null;
+    // let platform: string | null = null;
     
     useEffect(() => {
         // window.electron.invoke('get-platform', (_event: any, response: any) => {
@@ -55,11 +55,11 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
     }
 
     //For MacOS devices
-    const openReleasePage = () => {
-        console.log(platform)
-        const url = 'https://github.com/BereketGirma/AutoShift/releases'
-        window.electron.invoke('open-external', url)
-    }
+    // const openReleasePage = () => {
+    //     console.log(platform)
+    //     const url = 'https://github.com/BereketGirma/AutoShift/releases'
+    //     window.electron.invoke('open-external', url)
+    // }
 
     return(
         <div className='home'>
