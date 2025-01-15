@@ -17,12 +17,18 @@ export class ExcelOperations {
         this.loadFile();
     }
 
+    /**
+     * Handles loading in the excel file based on the file path.
+     * If the files doesn't exists, it will create a new workbook and save that to the file path.
+     */
     public loadFile(): void {
+        //Check if file already exists
         if(fs.existsSync(this.filePath)) {
             try{
                 this.workbook = XLSX.readFile(this.filePath)
                 const sheet = this.workbook.Sheets[this.sheetName]
 
+                //Making sure that the required sheet exists
                 if(!sheet){
                     this.createNewWorkbook();
                 } else {
@@ -37,6 +43,10 @@ export class ExcelOperations {
         }
     }
 
+    /**
+     * Handles the creation of a new workbook. 
+     * This by default adds day, startTime and endTime into columns.
+     */
     private async createNewWorkbook(): Promise<void> {
         try{
             const headers = [['day', 'startTime', 'endTime']];
@@ -50,11 +60,17 @@ export class ExcelOperations {
         
     }
 
+    /**
+     * Handles reading the excel file and returns an array that contains the shifts
+     * @returns An array of type ExcelData
+     */
     public async readExcelFile(): Promise<ExcelData[]> {
         try {
             if (!fs.existsSync(this.filePath)) {
                 throw new Error('Excel file does not exist');
             }
+
+            //Refreshing workbook to get most recent updates if any occured
             this.refreshWorkbook();
             
             if(this.workbook && this.worksheet){
@@ -69,6 +85,11 @@ export class ExcelOperations {
         }
     }
 
+    /**
+     * Handles writing into file. 
+     * It is essentially handles saving shifts into the excel file.
+     * @param data contains an array of shifts of type ExcelData
+     */
     public async writeIntoFile(data: ExcelData[]): Promise<void> {
         try {
             if(!fs.existsSync(this.filePath)) {
@@ -76,14 +97,19 @@ export class ExcelOperations {
             }
             
             const existingData = await this.readExcelFile()
+
+            //Check for an collision with shifts before adding
             if(this.checkCollidingData(existingData, data)){
                 throw new Error('Collision')
             }
+
+            //Sort the shifts before adding
             const updatedData = [...existingData, ...data]
             this.sortShifts(updatedData)
 
             const updatedWorksheet = XLSX.utils.json_to_sheet(updatedData)
 
+            //If the workbook was not found, create one and add shifts
             if(this.workbook) {
                 this.workbook.Sheets[this.sheetName] = updatedWorksheet;
                 XLSX.writeFile(this.workbook, this.filePath)
@@ -96,6 +122,12 @@ export class ExcelOperations {
         }
     }
 
+    /**
+     * Checks for collision between existing shifts and new ones being added
+     * @param existingData contains the previous shifts from file
+     * @param data it is the new shift that is about to be added
+     * @returns true if collision does occur and false if not 
+     */
     private checkCollidingData(existingData: ExcelData[], data: ExcelData[]): boolean {
         
         const nonCollidingData = data.filter((newShift) => {
@@ -103,10 +135,11 @@ export class ExcelOperations {
                 return (
                     existingShift.day === newShift.day && 
                     !(
+                        //Converting to 24 hour format for comparision
                         this.convertTo24HourFormat(newShift.endTime) <= this.convertTo24HourFormat(existingShift.startTime) ||
                         this.convertTo24HourFormat(newShift.startTime) >= this.convertTo24HourFormat(existingShift.endTime)
-                    )
-                );
+                    
+                ));
             });
         })
 
@@ -117,6 +150,11 @@ export class ExcelOperations {
         return false
     }
 
+    /**
+     * Handles conversion to 24hour format.
+     * @param time - string
+     * @returns 24 hour format of the given time
+     */
     private convertTo24HourFormat(time: string): number {
         const [timePart, meridian] = time.split(" ");
         const [hourStr, minuteStr] = timePart.split(":")
@@ -137,10 +175,23 @@ export class ExcelOperations {
         return hours * 60 + minutes
     }
 
+    /**
+     * Gets the day index based on dayOrder
+     * ```
+     * dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+     * ```
+     * @param day - string
+     * @returns a number referring to the list of day order
+     */
     private getDayIndex(day: string):number{
         return this.dayOrder.indexOf(day);
     }
 
+    /**
+     * Handles the sorting of shifts by ascending format
+     * @param shifts - List of ExcelData
+     * @returns returns sorted shift
+     */
     private sortShifts(shifts: ExcelData[]): ExcelData[] {
         return shifts.sort((a, b) => {
             const dayComparison = this.getDayIndex(a.day) - this.getDayIndex(b.day);
@@ -154,26 +205,36 @@ export class ExcelOperations {
         })
     }
 
+    /**
+     * Handles removal of shifts from the excel file
+     * @param shiftToDelete 
+     * @returns 
+     */
     public async deleteFromFile(shiftToDelete: ExcelData): Promise<void> {
         try{ 
+            //Checking if the file exists at the file path
             if(!fs.existsSync(this.filePath)) {
                 return;
             }
 
             const existingData = await this.readExcelFile();
 
+            //Filter by removing the shift to delete
             const filteredData = existingData.filter((row) => {
                 return !Object.entries(shiftToDelete).every(([key, value]) => row[key as keyof ExcelData] === value);
             });
 
+            //Storing to prepare for updating file
             const updatedWorksheet = XLSX.utils.json_to_sheet(filteredData, {skipHeader: false});
 
+            //Check if workbook exists before updating file
             if(this.workbook){
                 this.workbook.Sheets[this.sheetName] = updatedWorksheet;
             } else {
                 throw new Error('Workbook is not loaded.');
             }
 
+            //Write into the file
             XLSX.writeFile(this.workbook, this.filePath)
 
         } catch (error) {
@@ -181,6 +242,9 @@ export class ExcelOperations {
         }
     }
 
+    /**
+     * Reloads the excel file by reading the file again
+     */
     private refreshWorkbook() {
         if(fs.existsSync(this.filePath)) {
             this.workbook = XLSX.readFile(this.filePath);
