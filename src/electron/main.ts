@@ -33,20 +33,20 @@ const createWindow = () => {
   })
 };
 
+//When the app is ready create the window
+//Checks if it is on dev mode as well
 app.whenReady().then(() => {
   createWindow();
-  if(isDev()){
-    autoUpdater.allowDowngrade = true;
-    autoUpdater.checkForUpdatesAndNotify()
-  } else {
-    autoUpdater.checkForUpdatesAndNotify()
-  }
+  
+  //Check for updates as app launches
+  autoUpdater.checkForUpdatesAndNotify()
 
   if(mainWindow) {
     registerIpcHandlers(mainWindow, autoUpdater)
   }
 
   app.on('activate', () => {
+    //Checks if window exists, then try to show it. If not create a new window 
     if(BrowserWindow.getAllWindows().length === 0){
       createWindow();
     } else {
@@ -56,7 +56,10 @@ app.whenReady().then(() => {
 
 })
 
+//When app is closed, terminate process
 app.on('window-all-closed', () => {
+
+  //For MacOS
   if (process.platform !== 'darwin') {
     app.quit();
   }

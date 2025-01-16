@@ -4,14 +4,19 @@ import fs from 'fs';
 import { createIpcMain, ExcelData, getPlatform } from './util.js'
 import { ipcMain, BrowserWindow, shell } from 'electron';
 import { AppUpdater } from 'electron-updater';
-import { platform } from 'os';
 
+/**
+ * All app ipc handlers are listed here
+ * @param mainWindow is the main BrowserWindow created by electron
+ * @param autoUpdater Electron package to get updates through
+ */
 export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppUpdater) {
     const ipc = createIpcMain()
     const excelOps = new ExcelOperations();
 
     ipc.handle('check-for-updates', async() => {
         try{
+            //Checks if any new release is uploaded on GitHub repo
             await autoUpdater.checkForUpdates()
             return { success: true, message: 'Checking for updates...' };
         } catch(error: any) {
@@ -21,6 +26,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
 
     ipc.handle('quit-and-install', () => {
         try{
+            //To quit and reinstall update
             autoUpdater.quitAndInstall(false, true);
             return { success: true, message: 'App is updating...' }
         } catch (error: any) {
@@ -32,6 +38,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     ipc.handle('start-download', async () => {
         console.log('Attempting to start download')
         try{
+            //Initiates app update download
             await autoUpdater.downloadUpdate()
             console.log('Download started successfully.')
             return { succcess: true, message: 'Downloading update' }
@@ -60,6 +67,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         mainWindow.webContents.send('update-status', { status: 'downloaded' });
     });
 
+    //Handles excel file creation
     ipc.handle('check-and-create-file', async () => {
         if(!fs.existsSync(excelOps.filePath)) {
             excelOps.loadFile();
@@ -69,6 +77,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         }
     })
 
+    //Handles reading excel file
     ipc.handle('read-excel-file', async () => {
         try{
             const shifts = await excelOps.readExcelFile();
@@ -78,6 +87,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         }
     })
 
+    //Handles writing into excel file
     ipc.handle('write-into-file', async (_event, newData: ExcelData[]) => {
         try{
             await excelOps.writeIntoFile(newData)
@@ -87,6 +97,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         }
     })
 
+    //Handles data deletion from excel file
     ipc.handle('delete-from-file', async (_event, removedData: ExcelData) => {
         try{
             await excelOps.deleteFromFile(removedData);
@@ -96,6 +107,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         }
     })
 
+    //Handles running selenium script
     ipc.handle('run-script', async (_event, startDate: string, endDate: string) => {
         try {
             console.log("Running Selenium script...")
@@ -111,6 +123,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         }
     })
 
+    //Handles choice selection sent through UI
     ipc.handle('confirm-or-cancel', async (_event: any, response: { confirmed: boolean }) => {
         const window = BrowserWindow.getFocusedWindow();
         if(!window) throw new Error('No window available to handle confirmation.')
@@ -120,10 +133,12 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         return response;
     })
 
+    //Redirects to GitHub releases page for download
     ipc.handle('open-external', async (_event, url: string) => {
         await shell.openExternal(url)
     })
 
+    //Returns the platform type
     ipc.handle('get-platform', async () => {
         return { platform: await getPlatform()}
     })
