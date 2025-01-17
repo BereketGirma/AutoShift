@@ -3,12 +3,15 @@ import { ipcMain } from 'electron';
 export function isDev(): boolean {
     return process.env.NODE_ENV === 'development';
 }
+
+//Definds how shifts are sorted in Excel file
 export interface ExcelData {
     day: string;
     startTime: string;
     endTime: string;
 }
 
+//This is where all ipc handlers format are defined
 export interface EventPayloadMapping {
     'check-and-create-file' : {
         response: {
@@ -106,6 +109,7 @@ export interface EventPayloadMapping {
 //Type helper for handlers
 type IpcHandler<T> = (event: Electron.IpcMainInvokeEvent, ...args: any[]) => Promise<T> | T;
 
+//Create an ipc main to handle ipc connections
 export function createIpcMain() {
     return {
         handle<K extends keyof EventPayloadMapping>(
@@ -117,6 +121,7 @@ export function createIpcMain() {
     }
 }
 
+//Provides information about the platform application is running on
 export async function getPlatform(): Promise<string> {
     const platform = process.platform;
     const arch = process.arch
