@@ -50,6 +50,16 @@ function waitForConfirmation(window: BrowserWindow, shift: ShiftFormat): Promise
     })
 }
 
+function runScriptConfirmation(window: BrowserWindow): Promise<boolean> {
+    return new Promise((resolve) => {
+        window.webContents.send('confirm-run-script')
+
+        ipcMain.once('confirm-run-script', (_event, response: {confirmed: boolean}) => {
+            resolve(response.confirmed)
+        })
+    })
+}
+
 /**
  * Checks what platform the app is running on
  * @returns platform type
@@ -285,6 +295,8 @@ async function generateSchedule(shifts: ExcelData[], startDate: string, endDate:
  * @returns 
  */
 async function runSeleniumScript(window: any, data: ExcelData[], startDate: string, endDate: string): Promise<void> {
+    await runScriptConfirmation(window)
+
     sendProgressUpdates(window, 'Checking for chromedriver...', false)
 
     //Check if chrome driver exists
@@ -300,7 +312,6 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
     }
 
     sendProgressUpdates(window, 'Starting script', false)
-
     //Initializing driver
     const options = new Options()
     const driver = await new Builder()
