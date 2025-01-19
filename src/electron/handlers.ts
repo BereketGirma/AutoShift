@@ -143,4 +143,10 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         return { platform: await getPlatform()}
     })
 
+    //Handles confirmation to run script
+    ipc.handle('confirm-run-script', async (_event: any, response: { confirmed: boolean }) => {
+        ipcMain.emit('confirm-run-script', null, response)
+        return response;
+    })
+
 }
