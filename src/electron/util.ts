@@ -102,6 +102,13 @@ export interface EventPayloadMapping {
     'get-platform': {
         request: void,
         response: { platform: string }
+    },
+
+    'confirm-run-script': {
+        request: void,
+        response: { 
+            confirmed: boolean 
+        }
     }
     //Add more events here
 }
