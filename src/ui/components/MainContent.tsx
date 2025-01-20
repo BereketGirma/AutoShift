@@ -11,8 +11,12 @@ import {
     TableRow,
     Button,
     IconButton,
+    Box,
+    Container,
+    Badge,
 } from '@mui/material';
 
+import DownloadIcon from '@mui/icons-material/Download'
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddShiftModal from './AddShiftModal';
 import { ExcelData } from '../../electron/util';
@@ -20,13 +24,14 @@ import { useSnackbar } from './SnackbarProvider';
 
 
 interface MainContentProps {
-    onNavigate: () => void
+    onNavigateToCalander: () => void
+    onNavigateToUpdate: () => void;
 }
 
-function MainContent ({onNavigate}: MainContentProps) {
+function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentProps) {
     const { enqueueSnackbar } = useSnackbar();
-
     const [shifts, setShift] = useState<ExcelData[]>([]);
+    const [hasUpdates, setHasUpdates] = useState<boolean>(true);
 
     const getShifts = () => {
         window.electron.invoke('read-excel-file')
@@ -88,20 +93,67 @@ function MainContent ({onNavigate}: MainContentProps) {
             })
     }
 
+    const checkForUpdates = async () => {
+        const updates = await window.electron.invoke('check-for-updates')
+        if(updates.check){
+            setHasUpdates(true)
+        } else {
+            // setHasUpdates(false)
+        }
+    };
+
     useEffect(() => {
+        checkForUpdates();
         getShifts();
     }, [])
 
     return (
         <div className='home'>
-            <div>
-                <Typography variant='h5' color='black'> 
-                    Welcome to Auto-Shift
-                </Typography>
-                <Typography color='grey'> 
-                    Enter your shifts then once done, run the automation😃
-                </Typography>
-            </div>
+            <Box
+                display='flexbox'
+                flexDirection='column'
+                position='relative'
+            >
+                <Container
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        flexGrow: 1,
+                        textAlign: 'center'
+                    }}
+                >
+                    <Typography variant='h5' color='black'> 
+                        Welcome to Auto-Shift
+                    </Typography>
+                    <Typography color='grey'> 
+                        Enter your shifts then once done, run the automation😃
+                    </Typography>
+                </Container>
+                    
+                {hasUpdates && (
+                    <IconButton
+                        onClick={onNavigateToUpdate}
+                        sx={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0
+                        }}
+                    >
+                        <Badge
+                            color="error"
+                            variant='dot'
+                            overlap='circular'
+                        >
+                            <DownloadIcon />
+                        </Badge>
+                    </IconButton>
+                )}
+                
+                
+            </Box>
+            
 
             <Paper className='shift-container'>
                 <TableContainer>
@@ -149,7 +201,7 @@ function MainContent ({onNavigate}: MainContentProps) {
                 <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal}>
                     Add Shift
                 </Button>
-                <Button variant="contained" color='secondary' onClick={onNavigate} disabled={shifts.length === 0}>
+                <Button variant="contained" color='secondary' onClick={onNavigateToCalander} disabled={shifts.length === 0}>
                     Continue
                 </Button>
             </div>
