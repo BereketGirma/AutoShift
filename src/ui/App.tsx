@@ -25,15 +25,15 @@ const theme = createTheme({
 })
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<"splashScreen" | "main" | "calender" | "loading" | "update">("update");
+  const [currentPage, setCurrentPage] = useState<"splashScreen" | "main" | "calender" | "loading" | "update">("splashScreen");
 
-  const navigateTo = (page: "main" | "calender" | "loading") => {
+  const navigateTo = (page: "main" | "calender" | "loading" | "update") => {
     setCurrentPage(page)
   }
   
   const pages = {
     splashScreen: <SplashScreen onNavigate={() => navigateTo('main')}/>,
-    main: <MainContent onNavigate={() => navigateTo('calender')}/>,
+    main: <MainContent onNavigateToCalander={() => navigateTo('calender')} onNavigateToUpdate={() => navigateTo('update')}/>,
     calender: (
       <Container className='home'>
         <CalenderContent 
