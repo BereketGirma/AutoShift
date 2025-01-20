@@ -74,7 +74,7 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
 
                 {status === 'downloading' && (
                     <Typography color='black'>
-                        Progress: {(progress * 100).toFixed(2)}%
+                        Progress: {(progress * 10).toFixed(2)}%
                     </Typography>
                 )}
 
