@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron';
+import { UpdateCheckResult } from 'electron-updater';
 
 export function isDev(): boolean {
     return process.env.NODE_ENV === 'development';
@@ -74,7 +75,8 @@ export interface EventPayloadMapping {
         request: void,
         response: {
             success: boolean,
-            message: string
+            message: string,
+            check: UpdateCheckResult | null
         }
     },
 

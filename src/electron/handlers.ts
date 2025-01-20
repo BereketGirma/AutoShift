@@ -17,10 +17,10 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     ipc.handle('check-for-updates', async() => {
         try{
             //Checks if any new release is uploaded on GitHub repo
-            await autoUpdater.checkForUpdates()
-            return { success: true, message: 'Checking for updates...' };
+            const check = await autoUpdater.checkForUpdates()
+            return { success: true, message: 'Checking for updates...', check: check };
         } catch(error: any) {
-            return { success: false, message: error.message || 'Failed to check for updates'}
+            return { success: false, message: error.message || 'Failed to check for updates', check: null }
         }
     })
 
