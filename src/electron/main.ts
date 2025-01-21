@@ -39,6 +39,7 @@ app.whenReady().then(() => {
   createWindow();
   
   //Check for updates as app launches
+  autoUpdater.autoDownload = false
   autoUpdater.checkForUpdatesAndNotify()
 
   if(mainWindow) {
