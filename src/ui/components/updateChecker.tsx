@@ -1,5 +1,7 @@
-import { Box, List, Typography, Button, ListItem, Grid2 } from '@mui/material';
+import { Box, List, Typography, Button, ListItem, Paper, IconButton } from '@mui/material';
 import { useState, useEffect } from 'react';
+import LaunchIcon from '@mui/icons-material/Launch'
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 interface updateCheckerProps {
     onNavigate: () => void;
@@ -17,23 +19,6 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
             url: 'some url'
         },
         {
-            version: '0.0.0',
-            released: '1/20/2025',
-            url: 'some url'
-        },
-        {
-            version: '0.0.0',
-            released: '1/20/2025',
-            url: 'some url'
-        },{
-            version: '0.0.0',
-            released: '1/20/2025',
-            url: 'some url'
-        },{
-            version: '0.0.0',
-            released: '1/20/2025',
-            url: 'some url'
-        },{
             version: '0.0.0',
             released: '1/20/2025',
             url: 'some url'
@@ -101,88 +86,110 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
     }
 
     return(
-        <div className='home'>
-            <Grid2 container spacing={2}>
-                <Grid2 size={12}>
-                    <Box display={'flex'} justifyContent={'flex-start'}>
+            <Paper
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    width: '100%',
+                    overflow: 'hidden',
+                    backgroundColor: 'white',
+                    borderRadius: '5px',
+                    textAlign:'center',
+                    alignContent: 'center',
+                    gap: '1em',
+                    p: '1em'
+                }}
+            >
+                <Box display={'flex'} flexDirection='column' gap={'2em'}>
+                    <Box display={'flex'}>
                         <Button variant="contained" onClick={onNavigate} >
                             Back
                         </Button>
                     </Box>
                     
-                    <Typography variant='h6' color='black'>
+                    <Typography variant='h5' color='black'>
                         Version History
                     </Typography>
-                </Grid2>
+                </Box>
 
-                <Grid2 size={12}>
-                    {isMac ? (
-                        <Box
-                            display={'flex'}
-                            flexDirection={'column'}
-                            sx={{ overflow: 'auto', border: '1px solid #ddd', borderRadius:'1em', position:'relative'}}
-                        >
-                            
-                            <List>
-                                {updateList.map((update, index) => 
-                                    <ListItem key={index} sx={{ borderBottom: '1px solid #ddd'}}>
+                
+                {isMac ? (
+                    <Box
+                        border= {'1px solid #ddd'}
+                        borderRadius={'0.5em'}
+                        overflow={'auto'}
+                    >
+                        
+                        <List sx={{ overflow: 'auto'}}>
+                            {updateList.map((update, index) => 
+                                <ListItem 
+                                    key={index} 
+                                    sx={{ 
+                                        display: 'flex',
+                                        borderBottom: '1px solid #ddd',
+                                        justifyContent: 'space-between'
+                                    }}
+                                >
                                         <Box>
                                             <Typography variant='body1' color='black' fontWeight='bold'>Version: {update.version}</Typography>
                                             <Typography variant='body2' color='black'>Released: {update.released}</Typography>
                                         </Box>
-                                    </ListItem>
-                                )}
-                            </List>  
 
-                                                
-                        </Box>
-                    ) : (
-                        <Box>
-                            <Button onClick={checkForUpdates} variant='contained'>
-                                Check for Updates
+                                        <Box display='flex' gap={'1em'}>
+                                            <IconButton color='primary'>
+                                                <FileDownloadIcon />
+                                            </IconButton>
+
+                                            <IconButton color='primary'>
+                                                <LaunchIcon />
+                                            </IconButton>
+                                        </Box>
+                                        
+                                </ListItem>
+                            )}
+                        </List>  
+
+                                            
+                    </Box>
+                ) : (
+                    <Box>
+                        <Button onClick={checkForUpdates} variant='contained'>
+                            Check for Updates
+                        </Button>
+
+                        {status === 'downloading' && (
+                            <Typography color='black'>
+                                Progress: {(progress * 10).toFixed(2)}%
+                            </Typography>
+                        )}
+
+                        {status === 'update-available' && (
+                            <Button onClick={startDownload} variant='contained'>
+                                Download Update
                             </Button>
+                        )}
 
-                            {status === 'downloading' && (
-                                <Typography color='black'>
-                                    Progress: {(progress * 10).toFixed(2)}%
-                                </Typography>
-                            )}
+                        {status === 'downloaded' && (
+                            <Button onClick={quitAndInstall} variant='contained'>
+                                Install Update
+                            </Button>
+                        )}
 
-                            {status === 'update-available' && (
-                                <Button onClick={startDownload} variant='contained'>
-                                    Download Update
-                                </Button>
-                            )}
+                        {status === 'no-updates' && (
+                            <Typography variant='body1'>
+                                No Updates available. Your app is up to date!
+                            </Typography>
+                        )}
 
-                            {status === 'downloaded' && (
-                                <Button onClick={quitAndInstall} variant='contained'>
-                                    Install Update
-                                </Button>
-                            )}
-
-                            {status === 'no-updates' && (
-                                <Typography variant='body1'>
-                                    No Updates available. Your app is up to date!
-                                </Typography>
-                            )}
-
-                            {status === 'error' && (
-                                <Typography variant='body1' color='error'>
-                                    An error occured while checking for updates. Please try again later.
-                                </Typography>
-                            )}
-                        </Box>
-                    )}
-
-                </Grid2>
-                
-                
-                    
-
-                
-            </Grid2>
-            
-        </div>
+                        {status === 'error' && (
+                            <Typography variant='body1' color='error'>
+                                An error occured while checking for updates. Please try again later.
+                            </Typography>
+                        )}
+                    </Box>
+                )}
+            </Paper>
     )
 }
 
