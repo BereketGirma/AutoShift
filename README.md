@@ -12,5 +12,3 @@ Welcome to AutoShift! AutoShift is an app used to help automate adding work hour
      - ```npm run dist:win```
    - For Mac:
      - ```npm run dist:mac```
-   - For linux(to be tested):
-     - ```npm run dist:linux``` 
