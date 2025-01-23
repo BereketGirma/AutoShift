@@ -35,12 +35,10 @@ const App: React.FC = () => {
     splashScreen: <SplashScreen onNavigate={() => navigateTo('main')}/>,
     main: <MainContent onNavigateToCalander={() => navigateTo('calender')} onNavigateToUpdate={() => navigateTo('update')}/>,
     calender: (
-      <Container className='home'>
         <CalenderContent 
           onNavigateToMain={() => navigateTo('main')}
           onNavigateToLoading={() => navigateTo('loading')}
         />
-      </Container>
     ),
     loading: <LoadingScreen onNavigate={() => navigateTo('main')}/>,
     update: <UpdateChecker onNavigate={() => navigateTo('main')} />,
