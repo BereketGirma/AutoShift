@@ -32,8 +32,6 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
                 if(response.platform.includes('mac')){
                     setIsMac(true)
                 }
-
-                console.log(isMac)
             } catch (error) {
                 console.error('Error fetching platform', error)
             }
@@ -43,7 +41,6 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
        
 
         window.electron.on('update-status', (_event: any, data: any) => {
-            console.log("Working:",data)
             setStatus(data.status)
             if(data.progress) setProgress(data.progress);
         });
@@ -77,12 +74,6 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
             console.log("HMM WHY NO WORK",response)
             console.error('Failed to start download:', response.error)
         }
-    }
-
-    // For MacOS devices
-    const openReleasePage = () => {
-        const url = 'https://github.com/BereketGirma/AutoShift/releases'
-        window.electron.invoke('open-external', url)
     }
 
     return(
