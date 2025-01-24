@@ -1,4 +1,4 @@
-import { Box, List, Typography, Button, ListItem, Paper, IconButton, Tooltip } from '@mui/material';
+import { Box, List, Typography, Button, ListItem, Paper, IconButton, Tooltip, Modal, LinearProgress } from '@mui/material';
 import { useState, useEffect } from 'react';
 import LaunchIcon from '@mui/icons-material/Launch'
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
@@ -13,6 +13,9 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
     const [progress, setProgress] = useState(0);
     const [isMac, setIsMac] = useState<boolean>(false);
     const [spinning, setSpinning] = useState<boolean>(false);
+    const [modalOpen, setModalOpen] = useState<boolean>(false);
+    const [isDownloading, setIsDownloading] = useState<boolean>(false);
+
     const updateList = [
         {
             version: '1.0.0',
@@ -55,10 +58,17 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
         setStatus('Checking for updates...')
         const response = await window.electron.invoke('check-for-updates');
         console.log(response)
-        
+
         setSpinning(true)
         await new Promise((resolve) => setTimeout(resolve, 500))
         setSpinning(false)
+
+        setModalOpen(true)
+    }
+
+    const handleCloseModal = () => {
+        setIsDownloading(false)
+        setModalOpen(false)
     }
 
     const quitAndInstall = async () => {
@@ -72,6 +82,8 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
     }
 
     const startDownload = async () => {
+        setIsDownloading(true)
+
         const response = await window.electron.invoke('start-download');
         if(response.success){
             console.log('Download Started successfully');
@@ -103,6 +115,7 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
                             Back
                         </Button>
 
+                        {isMac && 
                         <Tooltip title="Check For Updates">
                             <IconButton 
                                 onClick={checkForUpdates} 
@@ -116,6 +129,8 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
                                 <LoopIcon color='secondary'/>
                             </IconButton>
                         </Tooltip>
+                        }
+                        
                     </Box>
                     
                     <Typography variant='h5' color='black'>
@@ -170,11 +185,7 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
                 {isMac ? (
                     <></>
                 ) : (
-                    <Box>
-                        <Button onClick={checkForUpdates} variant='contained'>
-                            Check for Updates
-                        </Button>
-
+                    <Paper>
                         {status === 'downloading' && (
                             <Typography color='black'>
                                 Progress: {(progress * 10).toFixed(2)}%
@@ -204,8 +215,69 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
                                 An error occured while checking for updates. Please try again later.
                             </Typography>
                         )}
-                    </Box>
+                    </Paper>
                 )}
+
+                <Modal open={modalOpen} onClose={handleCloseModal}>
+                    <Box 
+                        display={'flex'}
+                        flexDirection={'column'}
+                        position={'absolute'}
+                        alignItems={'center'}
+                        justifyContent={'center'}
+                        top={'50%'}
+                        left={'50%'}
+                        borderRadius={'0.5em'}
+                        bgcolor={'background.paper'}
+                        p={2}
+                        gap={2}
+                        width={'50%'}
+                        maxWidth={'500px'}
+                        height={'auto'}
+                        textAlign={'center'}
+                        sx={{
+                            transform: 'translate(-50%, -50%)',
+                        }}
+                    >
+                        <Box>
+                            <Typography color='black' variant='h6'> 
+                                    Update Available!
+                                    
+                            </Typography>
+
+                            <Typography color='grey' variant='body2'>
+                                Click 'Download' to start update download
+                            </Typography>
+                        </Box>
+                        
+                        <Box
+                            display={'flex'}
+                            flex={1}
+                            flexDirection={'column'}
+                            alignItems={'center'}
+                            width={'100%'}
+                            p={1}
+                        >
+                            {!isDownloading ? (
+                                <Button onClick={startDownload} variant='contained'>
+                                    Download
+                                </Button>
+                            ):(
+                                <Box display={'flex'} alignItems={'center'} width={'100%'}>
+                                    <Box width={'100%'} mr={1}>
+                                        <LinearProgress color='secondary' variant='determinate' value={progress}/>
+                                    </Box>
+                                    
+                                    <Box>
+                                        <Typography color='grey' variant='body2'>
+                                            {(progress * 10).toFixed(2)}%
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            )}
+                        </Box>
+                    </Box>
+                </Modal>
             </Paper>
     )
 }
