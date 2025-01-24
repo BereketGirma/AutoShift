@@ -1,7 +1,6 @@
 import { useState } from 'react'
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Container } from '@mui/material';
 
 import SplashScreen from './components/SplashScreen';
 import MainContent from './components/MainContent';

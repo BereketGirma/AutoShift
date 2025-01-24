@@ -14,6 +14,7 @@ import {
     Box,
     Container,
     Badge,
+    Tooltip
 } from '@mui/material';
 
 import DownloadIcon from '@mui/icons-material/Download'
@@ -133,22 +134,24 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 </Container>
                     
                 {hasUpdates && (
-                    <IconButton
-                        onClick={onNavigateToUpdate}
-                        sx={{
-                            position: 'absolute',
-                            top: 0,
-                            right: 0
-                        }}
-                    >
-                        <Badge
-                            color="error"
-                            variant='dot'
-                            overlap='circular'
+                    <Tooltip title="Update">
+                        <IconButton
+                            onClick={onNavigateToUpdate}
+                            sx={{
+                                position: 'absolute',
+                                top: 0,
+                                right: 0
+                            }}
                         >
-                            <DownloadIcon />
-                        </Badge>
-                    </IconButton>
+                            <Badge
+                                color="error"
+                                variant='dot'
+                                overlap='circular'
+                            >
+                                    <DownloadIcon />
+                            </Badge>
+                        </IconButton>
+                    </Tooltip>
                 )}
                 
                 
@@ -182,13 +185,15 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                                     <TableCell>{shift.startTime}</TableCell>
                                     <TableCell>{shift.endTime}</TableCell>
                                     <TableCell>
-                                        <IconButton
-                                            color = "error"
-                                            className='no-outline'
-                                            onClick={() => handleDeleteShift(shift)}
-                                        >
-                                            <DeleteIcon/>
-                                        </IconButton>
+                                        <Tooltip title="Delete">
+                                            <IconButton
+                                                color = "error"
+                                                className='no-outline'
+                                                onClick={() => handleDeleteShift(shift)}
+                                            >
+                                                <DeleteIcon/>
+                                            </IconButton>
+                                        </Tooltip>
                                     </TableCell>
                                 </TableRow>
                             )))}

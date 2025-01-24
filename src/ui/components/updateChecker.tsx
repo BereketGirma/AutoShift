@@ -1,7 +1,8 @@
-import { Box, List, Typography, Button, ListItem, Paper, IconButton } from '@mui/material';
+import { Box, List, Typography, Button, ListItem, Paper, IconButton, Tooltip } from '@mui/material';
 import { useState, useEffect } from 'react';
 import LaunchIcon from '@mui/icons-material/Launch'
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import LoopIcon from '@mui/icons-material/Loop'
 
 interface updateCheckerProps {
     onNavigate: () => void;
@@ -11,7 +12,7 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
     const [status, setStatus] = useState("idle");
     const [progress, setProgress] = useState(0);
     const [isMac, setIsMac] = useState<boolean>(false);
-
+    const [spinning, setSpinning] = useState<boolean>(false);
     const updateList = [
         {
             version: '1.0.0',
@@ -54,6 +55,10 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
         setStatus('Checking for updates...')
         const response = await window.electron.invoke('check-for-updates');
         console.log(response)
+        
+        setSpinning(true)
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        setSpinning(false)
     }
 
     const quitAndInstall = async () => {
@@ -93,10 +98,24 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
                 }}
             >
                 <Box display={'flex'} flexDirection='column' gap={'2em'}>
-                    <Box display={'flex'}>
+                    <Box display={'flex'} justifyContent={'space-between'}>
                         <Button variant="contained" onClick={onNavigate} >
                             Back
                         </Button>
+
+                        <Tooltip title="Check For Updates">
+                            <IconButton 
+                                onClick={checkForUpdates} 
+                                color='secondary' 
+                                sx={{ 
+                                    animation: spinning
+                                        ? 'spin 0.5s ease-in-out'
+                                        : 'none',  
+                                }}
+                            >
+                                <LoopIcon color='secondary'/>
+                            </IconButton>
+                        </Tooltip>
                     </Box>
                     
                     <Typography variant='h5' color='black'>
@@ -105,44 +124,51 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
                 </Box>
 
                 
-                {isMac ? (
-                    <Box
-                        border= {'1px solid #ddd'}
-                        borderRadius={'0.5em'}
-                        overflow={'auto'}
-                    >
-                        
-                        <List sx={{ overflow: 'auto'}}>
-                            {updateList.map((update, index) => 
-                                <ListItem 
-                                    key={index} 
-                                    sx={{ 
-                                        display: 'flex',
-                                        borderBottom: '1px solid #ddd',
-                                        justifyContent: 'space-between'
-                                    }}
-                                >
-                                        <Box>
-                                            <Typography variant='body1' color='black' fontWeight='bold'>Version: {update.version}</Typography>
-                                            <Typography variant='body2' color='black'>Released: {update.released}</Typography>
-                                        </Box>
 
-                                        <Box display='flex' gap={'1em'}>
+                <Box
+                    border= {'1px solid #ddd'}
+                    borderRadius={'0.5em'}
+                    overflow={'auto'}
+                >
+                    
+                    <List sx={{ overflow: 'auto'}}>
+                        {updateList.map((update, index) => 
+                            <ListItem 
+                                key={index} 
+                                sx={{ 
+                                    display: 'flex',
+                                    borderBottom: '1px solid #ddd',
+                                    justifyContent: 'space-between'
+                                }}
+                            >
+                                    <Box>
+                                        <Typography variant='body1' color='black' fontWeight='bold'>Version: {update.version}</Typography>
+                                        <Typography variant='body2' color='black'>Released: {update.released}</Typography>
+                                    </Box>
+
+                                    <Box display='flex' gap={'1em'}>
+                                        <Tooltip title="Download">
                                             <IconButton color='primary'>
                                                 <FileDownloadIcon />
                                             </IconButton>
-
+                                        </Tooltip>
+                                        
+                                        <Tooltip title="Open link">
                                             <IconButton color='primary'>
                                                 <LaunchIcon />
                                             </IconButton>
-                                        </Box>
-                                        
-                                </ListItem>
-                            )}
-                        </List>  
+                                        </Tooltip>
+                                    </Box>
+                            </ListItem>
+                        )}
+                    </List>  
 
-                                            
-                    </Box>
+                                        
+                </Box>
+
+                
+                {isMac ? (
+                    <></>
                 ) : (
                     <Box>
                         <Button onClick={checkForUpdates} variant='contained'>
