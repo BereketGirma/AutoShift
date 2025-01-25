@@ -31,7 +31,6 @@ const UpdateModal: React.FC<UpdateModalProps> = ({ open, onClose }) => {
 
     const startDownload = async () => {
         setIsDownloading(true)
-        setDescription('Downloading...')
 
         const response = await window.electron.invoke('start-download');
         if(response.success){
@@ -52,6 +51,13 @@ const UpdateModal: React.FC<UpdateModalProps> = ({ open, onClose }) => {
         window.electron.on('update-status', (_event: any, data: any) => {
             setStatus(data.status)
             if(data.progress) setProgress(data.progress);
+
+            if(data.status === 'update-available') setDescription('Update Available!')
+            if(data.status === 'downloading') setDescription('Downloading...')
+            if(data.status === 'downloaded') setDescription('Update Downloaded! Waiting to install...')
+            if(data.status === 'no-updates') setDescription('')
+            if(data.status === 'error') setDescription('')
+
         });
             
         return () => {
@@ -114,7 +120,7 @@ const UpdateModal: React.FC<UpdateModalProps> = ({ open, onClose }) => {
                             
                             <Box>
                                 <Typography color='grey' variant='body2'>
-                                    {(progress * 10).toFixed(2)}%
+                                    {(progress).toFixed(2)}%
                                 </Typography>
                             </Box>
                         </Box>
