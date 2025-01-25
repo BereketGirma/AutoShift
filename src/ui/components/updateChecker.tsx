@@ -82,7 +82,7 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
                             Back
                         </Button>
 
-                        {isMac && 
+                        {!isMac && 
                         <Tooltip title="Check For Updates">
                             <IconButton 
                                 onClick={checkForUpdates} 
