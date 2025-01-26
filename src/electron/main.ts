@@ -1,4 +1,4 @@
-import {app, BrowserWindow } from 'electron';
+import {app, BrowserWindow, Menu } from 'electron';
 import path from 'path';
 import { isDev } from './util.js'
 import { getPreloadPath } from './pathResolver.js';
@@ -19,6 +19,31 @@ const createWindow = () => {
     },
     show: false,
   });
+
+  const menuTemplate: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'File',
+      submenu: [
+        { label: 'Open'},
+        { type: 'separator'},
+        { role: 'quit'}
+      ]
+    },
+    
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator'},
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(menuTemplate);
 
   //Check if on development mode
   if(isDev()) {
