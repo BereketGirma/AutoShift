@@ -1,5 +1,6 @@
 {
     "appId": "com.bereket-girma.autoshift",
+    "productName": "AutoShift",
     "files": ["dist-electron", "dist-react"],
     "extraResources": ["dist-electron/preload.cjs"],
     "mac": {
@@ -7,18 +8,26 @@
         "icon": "./src/ui/logo/mac/icon.icns",
         "category": "public.app-category.productivity"
     },
-    "linux": {
-        "target": "AppImage"
-    },
     "win": {
         "target": ["nsis"],
         "signAndEditExecutable": false,
         "icon": "./src/ui/logo/win/icon.ico",
         "artifactName": "${productName}-Setup-${version}.exe"
     },
+    "nsis":{
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "artifactName": "${productName}-Installer-${version}.exe"
+    },
     "publish": {
         "provider": "github",
         "owner": "BereketGirma",
-        "repo": "AutoShift"
+        "repo": "AutoShift",
+        "releaseType": "draft"
+    },
+    "extraMetadata": {
+        "releaseNotes": "This is the beta release of AutoShift. Please test and provide feedback.",
+        "platform": "Windows, macOS",
+        "releaseType": "draft"
     }
 }
