@@ -20,30 +20,32 @@ const createWindow = () => {
     show: false,
   });
 
-  const menuTemplate: Electron.MenuItemConstructorOptions[] = [
-    {
-      label: 'File',
-      submenu: [
-        { label: 'Open'},
-        { type: 'separator'},
-        { role: 'quit'}
-      ]
-    },
+  //Custom menu options
+  // const menuTemplate: Electron.MenuItemConstructorOptions[] = [
+  //   {
+  //     label: 'File',
+  //     submenu: [
+  //       { label: 'Open'},
+  //       { type: 'separator'},
+  //       { role: 'quit'}
+  //     ]
+  //   },
     
-    {
-      label: 'Edit',
-      submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator'},
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' }
-      ]
-    }
-  ];
+  //   {
+  //     label: 'Edit',
+  //     submenu: [
+  //       { role: 'undo' },
+  //       { role: 'redo' },
+  //       { type: 'separator'},
+  //       { role: 'cut' },
+  //       { role: 'copy' },
+  //       { role: 'paste' }
+  //     ]
+  //   }
+  // ];
 
-  const menu = Menu.buildFromTemplate(menuTemplate);
+  // const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(null)
 
   //Check if on development mode
   if(isDev()) {
