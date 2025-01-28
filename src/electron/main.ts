@@ -20,16 +20,22 @@ const createWindow = () => {
     show: false,
   });
 
-  //Custom menu options
-  // const menuTemplate: Electron.MenuItemConstructorOptions[] = [
-  //   {
-  //     label: 'File',
-  //     submenu: [
-  //       { label: 'Open'},
-  //       { type: 'separator'},
-  //       { role: 'quit'}
-  //     ]
-  //   },
+  // Custom mac menu options
+  const macMenu: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'AutoShift',
+      submenu: [
+        { role: 'quit'}
+      ]
+    },
+    // {
+    //   label: 'File',
+    //   submenu: [
+    //     { label: 'Open'},
+    //     { type: 'separator'},
+    //     { role: 'quit'}
+    //   ]
+    // },
     
   //   {
   //     label: 'Edit',
@@ -42,10 +48,42 @@ const createWindow = () => {
   //       { role: 'paste' }
   //     ]
   //   }
-  // ];
+  ];
 
-  // const menu = Menu.buildFromTemplate(menuTemplate);
-  Menu.setApplicationMenu(null)
+  // Custom windows menu options
+  const winMenu: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'AutoShift',
+      submenu: [
+        { role: 'quit'}
+      ]
+    },
+    // {
+    //   label: 'File',
+    //   submenu: [
+    //     { label: 'Open'},
+    //     { type: 'separator'},
+    //     { role: 'quit'}
+    //   ]
+    // },
+    
+    // {
+    //   label: 'Edit',
+    //   submenu: [
+    //     { role: 'undo' },
+    //     { role: 'redo' },
+    //     { type: 'separator'},
+    //     { role: 'cut' },
+    //     { role: 'copy' },
+    //     { role: 'paste' }
+    //   ]
+    // }
+  ];
+
+  const menuTemplate = process.platform === 'darwin' ? macMenu : []
+
+  const appMenu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(appMenu)
 
   //Check if on development mode
   if(isDev()) {
