@@ -20,32 +20,38 @@ const createWindow = () => {
     show: false,
   });
 
-  //Custom menu options
-  // const menuTemplate: Electron.MenuItemConstructorOptions[] = [
-  //   {
-  //     label: 'File',
-  //     submenu: [
-  //       { label: 'Open'},
-  //       { type: 'separator'},
-  //       { role: 'quit'}
-  //     ]
-  //   },
+  // Custom menu options
+  const menuTemplate: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'AutoShift',
+      submenu: [
+        { role: 'quit'}
+      ]
+    },
+    // {
+    //   label: 'File',
+    //   submenu: [
+    //     { label: 'Open'},
+    //     { type: 'separator'},
+    //     { role: 'quit'}
+    //   ]
+    // },
     
-  //   {
-  //     label: 'Edit',
-  //     submenu: [
-  //       { role: 'undo' },
-  //       { role: 'redo' },
-  //       { type: 'separator'},
-  //       { role: 'cut' },
-  //       { role: 'copy' },
-  //       { role: 'paste' }
-  //     ]
-  //   }
-  // ];
+    // {
+    //   label: 'Edit',
+    //   submenu: [
+    //     { role: 'undo' },
+    //     { role: 'redo' },
+    //     { type: 'separator'},
+    //     { role: 'cut' },
+    //     { role: 'copy' },
+    //     { role: 'paste' }
+    //   ]
+    // }
+  ];
 
-  // const menu = Menu.buildFromTemplate(menuTemplate);
-  Menu.setApplicationMenu(null)
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu)
 
   //Check if on development mode
   if(isDev()) {
