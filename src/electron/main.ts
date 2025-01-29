@@ -1,12 +1,11 @@
-import {app, BrowserWindow, ipcMain } from 'electron';
+import {app, BrowserWindow, Menu } from 'electron';
 import path from 'path';
-import fs from 'fs';
-import { isDev, createIpcMain, ExcelData } from './util.js'
+import { isDev } from './util.js'
 import { getPreloadPath } from './pathResolver.js';
-import { ExcelOperations } from './excelOperations.js';
-import { runSeleniumScript } from './script.js';
-import { Dayjs } from 'dayjs';
+import pkg from 'electron-updater';
+import { registerIpcHandlers } from './handlers.js';
 
+const { autoUpdater } = pkg
 let mainWindow: BrowserWindow | null = null;
 
 //Handles creating window
@@ -21,6 +20,71 @@ const createWindow = () => {
     show: false,
   });
 
+  // Custom mac menu options
+  const macMenu: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'AutoShift',
+      submenu: [
+        { role: 'quit'}
+      ]
+    },
+    // {
+    //   label: 'File',
+    //   submenu: [
+    //     { label: 'Open'},
+    //     { type: 'separator'},
+    //     { role: 'quit'}
+    //   ]
+    // },
+    
+  //   {
+  //     label: 'Edit',
+  //     submenu: [
+  //       { role: 'undo' },
+  //       { role: 'redo' },
+  //       { type: 'separator'},
+  //       { role: 'cut' },
+  //       { role: 'copy' },
+  //       { role: 'paste' }
+  //     ]
+  //   }
+  ];
+
+  // Custom windows menu options
+  const winMenu: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'AutoShift',
+      submenu: [
+        { role: 'quit'}
+      ]
+    },
+    // {
+    //   label: 'File',
+    //   submenu: [
+    //     { label: 'Open'},
+    //     { type: 'separator'},
+    //     { role: 'quit'}
+    //   ]
+    // },
+    
+    // {
+    //   label: 'Edit',
+    //   submenu: [
+    //     { role: 'undo' },
+    //     { role: 'redo' },
+    //     { type: 'separator'},
+    //     { role: 'cut' },
+    //     { role: 'copy' },
+    //     { role: 'paste' }
+    //   ]
+    // }
+  ];
+
+  const menuTemplate = process.platform === 'darwin' ? macMenu : []
+
+  const appMenu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(appMenu)
+
   //Check if on development mode
   if(isDev()) {
     mainWindow.loadURL('http://localhost:3000') //Run from localhost for hot reload purposes
@@ -34,84 +98,35 @@ const createWindow = () => {
   })
 };
 
+//When the app is ready create the window
+//Checks if it is on dev mode as well
 app.whenReady().then(() => {
   createWindow();
+  
+  //Check for updates as app launches
+  autoUpdater.autoDownload = false
+  autoUpdater.checkForUpdatesAndNotify()
+
+  if(mainWindow) {
+    registerIpcHandlers(mainWindow, autoUpdater)
+  }
 
   app.on('activate', () => {
+    //Checks if window exists, then try to show it. If not create a new window 
     if(BrowserWindow.getAllWindows().length === 0){
       createWindow();
     } else {
       mainWindow?.show();
     }
   })
+
 })
 
+//When app is closed, terminate process
 app.on('window-all-closed', () => {
+
+  //For MacOS
   if (process.platform !== 'darwin') {
     app.quit();
   }
-})
-
-const ipc = createIpcMain()
-
-const excelOps = new ExcelOperations();
-
-ipc.handle('check-and-create-file', async () => {
-  if(!fs.existsSync(excelOps.filePath)) {
-    excelOps.loadFile();
-    return { status: 'created', filePath: excelOps.filePath}
-  } else {
-    return { status: 'exists', filePath: excelOps.filePath}
-  }
-})
-
-ipc.handle('read-excel-file', async () => {
-  try{
-    const shifts = await excelOps.readExcelFile();
-    return { success: true, data:shifts}
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Failed to read Excel file'}
-  }
-})
-
-ipc.handle('write-into-file', async (_event, newData: ExcelData[]) => {
-  try{
-    await excelOps.writeIntoFile(newData)
-    return { success: true }
-  } catch (error: any) {
-    return {success: false, error: error.message || 'Failed to save shift'}
-  }
-})
-
-ipc.handle('delete-from-file', async (_event, removedData: ExcelData) => {
-  try{
-    await excelOps.deleteFromFile(removedData);
-    return { success: true }
-  } catch (error: any) {
-    return { success: false, error: error.message || 'Failed to delete shift'}
-  }
-})
-
-ipc.handle('run-script', async (_event, startDate: string, endDate: string) => {
-  try {
-    console.log("Running Selenium script...")
-    if (mainWindow) {
-      await runSeleniumScript(mainWindow, await excelOps.readExcelFile(), startDate, endDate);
-    } else {
-      throw new Error('Main window is not initialized');
-    }
-    return { success: true }
-  } catch (error) {
-    console.error('Error running Selenium script:', error);
-    throw error;
-  }
-})
-
-ipc.handle('confirm-or-cancel', async (_event: any, response: { confirmed: boolean }) => {
-  const window = BrowserWindow.getFocusedWindow();
-  if(!window) throw new Error('No window available to handle confirmation.')
-
-  ipcMain.emit('confirm-or-cancel', null, response)
-
-  return response;
 })

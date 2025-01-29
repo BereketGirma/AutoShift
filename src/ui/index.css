@@ -91,3 +91,14 @@ button:hover {
     background-color: #f9f9f9;
   }
 }
+
+@keyframes spin {
+  from {
+    will-change: transform;
+    transform: rotate(0deg);
+  }
+  to {
+    will-change: transform;
+    transform: rotate(360deg);
+  }
+}

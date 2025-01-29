@@ -5,7 +5,8 @@ import {
     Button,
     Box,
     Typography, 
-    Container,
+    Paper,
+    Container
 } from "@mui/material";
 import dayjs, {Dayjs} from "dayjs";
 
@@ -39,22 +40,22 @@ function CalenderContent({onNavigateToMain, onNavigateToLoading}: CalanderConten
     }
     
     return (
-        <Container 
+        <Paper 
             sx={{
-                display:'flex',
-                flexDirection:'column',
-                alignItems:'center',
-                gap:2
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                width: '100%',
+                overflow: 'hidden',
+                borderRadius: '5px',
+                backgroundColor: 'white',
+                textAlign:'center',
+                alignContent: 'center',
+                gap: '1em',
+                p: '1em'
             }}
         >
-            <Box
-                sx={{
-                    display:'flex',
-                    width:'100%',
-                    justifyContent:'flex-start',
-                    mb: 2
-                }}
-            >
+            <Box display={'flex'}>
                 <Button onClick={onNavigateToMain} variant="outlined">
                     Back
                 </Button>
@@ -64,12 +65,12 @@ function CalenderContent({onNavigateToMain, onNavigateToLoading}: CalanderConten
             <Container 
                 sx={{
                     display:"flex",
-                    justifyContent:"center",
                     flexDirection:'column',
-                    gap:2,
+                    gap:5,
+                    height: '80%'
                 }}
             >
-                <Box sx={{gap:1}}>
+                <Box>
                     <Typography variant="h5" color="black">
                         Pick a Date
                     </Typography>
@@ -80,13 +81,7 @@ function CalenderContent({onNavigateToMain, onNavigateToLoading}: CalanderConten
 
                 </Box>
                 
-                <Box
-                    sx={{
-                        display:"flex",
-                        justifyContent:"center",
-                        gap:2,
-                    }}
-                >
+                <Box display={'flex'} justifyContent={'center'} gap={2}>
                     <LocalizationProvider dateAdapter = {AdapterDayjs}>
                         <DesktopDatePicker 
                             label="Start date"
@@ -104,17 +99,19 @@ function CalenderContent({onNavigateToMain, onNavigateToLoading}: CalanderConten
                     </LocalizationProvider>
                 </Box>
             </Container>
-
-            <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                sx={{marginTop: 2, position:'relative'}}
-                onClick={handleSubmit}
-            >
-                Run Script
-            </Button>
-        </Container>
+            
+            <Box display={'flex'} justifyContent={'center'}>
+                <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    sx={{marginTop: 2, position:'relative'}}
+                    onClick={handleSubmit}
+                >
+                    Run Script
+                </Button>
+            </Box>
+        </Paper>
     )
 }
 

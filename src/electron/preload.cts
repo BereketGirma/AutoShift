@@ -1,6 +1,7 @@
 import electron from "electron";
 import type { EventPayloadMapping } from "./util.js" assert { "resolution-mode": "import" };
 
+//Consists of what functions are exposed to the frontend side
 const electronAPI = {
     invoke<K extends keyof EventPayloadMapping>(
         channel: K,
@@ -38,4 +39,6 @@ const electronAPI = {
     
 };
 
+//Exposed through the word 'electron'
+//Can be access by typing 'window.electon.<type of action here>'
 electron.contextBridge.exposeInMainWorld('electron', electronAPI)

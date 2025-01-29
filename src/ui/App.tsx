@@ -1,13 +1,13 @@
 import { useState } from 'react'
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Container } from '@mui/material';
 
 import SplashScreen from './components/SplashScreen';
 import MainContent from './components/MainContent';
 import CalenderContent from './components/CalenderContent'
 import SnackbarProvider from './components/SnackbarProvider';
 import LoadingScreen from './components/LoadingScreen';
+import UpdateChecker from './components/updateChecker';
 
 const theme = createTheme({
   palette: {
@@ -24,24 +24,23 @@ const theme = createTheme({
 })
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<"splashScreen" | "main" | "calender" | "loading">("splashScreen");
+  const [currentPage, setCurrentPage] = useState<"splashScreen" | "main" | "calender" | "loading" | "update">("splashScreen");
 
-  const navigateTo = (page: "main" | "calender" | "loading") => {
+  const navigateTo = (page: "main" | "calender" | "loading" | "update") => {
     setCurrentPage(page)
   }
   
   const pages = {
     splashScreen: <SplashScreen onNavigate={() => navigateTo('main')}/>,
-    main: <MainContent onNavigate={() => navigateTo('calender')}/>,
+    main: <MainContent onNavigateToCalander={() => navigateTo('calender')} onNavigateToUpdate={() => navigateTo('update')}/>,
     calender: (
-      <Container className='home'>
         <CalenderContent 
           onNavigateToMain={() => navigateTo('main')}
           onNavigateToLoading={() => navigateTo('loading')}
         />
-      </Container>
     ),
-    loading: <LoadingScreen onNavigate={() => navigateTo('main')}/>
+    loading: <LoadingScreen onNavigate={() => navigateTo('main')}/>,
+    update: <UpdateChecker onNavigate={() => navigateTo('main')} />,
   }
 
   return (

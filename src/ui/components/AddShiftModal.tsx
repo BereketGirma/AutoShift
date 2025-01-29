@@ -97,8 +97,9 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
             const format1 = `${formattedHour}:00 AM`
             const format2 = `${formattedHour}:15 AM`
             const format3 = `${formattedHour}:30 AM`
+            const format4 = `${formattedHour}:45 AM`
 
-            amTimes.push(format1, format2, format3);
+            amTimes.push(format1, format2, format3, format4);
         }
 
         for(let hour = 12; hour < 24; hour++){
@@ -106,7 +107,9 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
             const format1 = `${formattedHour}:00 PM`
             const format2 = `${formattedHour}:15 PM`
             const format3 = `${formattedHour}:30 PM`
-            pmTimes.push(format1, format2, format3);
+            const format4 = `${formattedHour}:45 PM`
+
+            pmTimes.push(format1, format2, format3, format4);
         }
 
         return [...amTimes, ...pmTimes]
@@ -116,7 +119,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
     const timeOptions = generate12HourTimeOptions();
 
     //Array of days of the week
-    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sudnay"]
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
     return (
         <Modal open={open} onClose={onClose}>
