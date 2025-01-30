@@ -14,7 +14,7 @@ import {
     Box,
     Container,
     Badge,
-    Tooltip
+    Tooltip,
 } from '@mui/material';
 
 import DownloadIcon from '@mui/icons-material/Download'
@@ -22,6 +22,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddShiftModal from './AddShiftModal';
 import { ExcelData } from '../../electron/util';
 import { useSnackbar } from './SnackbarProvider';
+import ModernTabs from './TabOptions';
 
 
 interface MainContentProps {
@@ -157,6 +158,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 
             </Box>
             
+            <ModernTabs />
 
             <Paper className='shift-container'>
                 <TableContainer>
