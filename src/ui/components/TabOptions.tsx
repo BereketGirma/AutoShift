@@ -11,7 +11,6 @@ import {
     Box,
     Tooltip,
     Tab,
-    Typography,
 } from '@mui/material';
 import {  TabList, TabPanel, TabContext } from '@mui/lab'
 import { styled } from '@mui/system'
@@ -49,8 +48,9 @@ const ModernTabList = styled(TabList) (({ theme }) => ({
 }));
 
 const ModernTabPanel = styled(TabPanel) (({ theme }) => ({
-    padding: theme.spacing(3),
-    borderTop: `1px solid ${theme.palette.divider}`,
+    padding: theme.spacing(0),
+    height: '100%',
+    flex: 1
 }));
 
 function ModernTabs() {
@@ -98,19 +98,28 @@ function ModernTabs() {
     };
 
     return (
-        <Box width={'100%'} typography={'body1'} sx={{ color: 'black'}}>
+        <Box width={'100%'} height={'100%'} display={'flex'} flexDirection={'column'}>
             <TabContext value={tabValue}>
                 <Box>
                     <ModernTabList onChange={handleTabChange} scrollButtons="auto" variant='scrollable'>
-                        <ModernTab label="Test 1" value="1"/>
-                        <ModernTab label="Test 2" value="2"/>
-                        <ModernTab label="Test 3" value="3"/>
+                        {jobTitles[0].map((job, index) => (
+                            <ModernTab key={index} label={job} value={`${index}`}></ModernTab>
+                        ))}
                     </ModernTabList>
                 </Box>
                 {jobTitles[0].map((_job, index) => (
-                    <ModernTabPanel key={index} value={(index + 1).toString()}>
-                        <Paper className='shift-container'>
-                            <TableContainer>
+                    <ModernTabPanel key={index} value={`${index}`}>
+                        <Paper
+                            sx={{
+                                flex:1,
+                                display:'flex',
+                                flexDirection: 'column',
+                                overflow:'auto',
+                                height: '100%',
+                                border: '1px #dedede solid'
+                            }}
+                        >
+                            <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
                                 <Table>
                                     <TableHead>
                                         <TableRow>
@@ -153,9 +162,7 @@ function ModernTabs() {
                             </TableContainer>
                         </Paper>
                     </ModernTabPanel>
-                ))};
-                
-                
+                ))}
             </TabContext>
         </Box>
     );
