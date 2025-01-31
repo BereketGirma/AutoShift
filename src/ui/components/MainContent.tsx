@@ -2,13 +2,6 @@ import '../styles/MainContent.css';
 import { useEffect, useState } from 'react';
 import { 
     Typography, 
-    Table,
-    TableBody, 
-    TableCell, 
-    TableContainer,
-    Paper,
-    TableHead,
-    TableRow,
     Button,
     IconButton,
     Box,
@@ -18,7 +11,6 @@ import {
 } from '@mui/material';
 
 import DownloadIcon from '@mui/icons-material/Download'
-import DeleteIcon from '@mui/icons-material/Delete';
 import AddShiftModal from './AddShiftModal';
 import { ExcelData } from '../../electron/util';
 import { useSnackbar } from './SnackbarProvider';
@@ -79,22 +71,6 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
             })
     }
 
-    const handleDeleteShift = (shiftToDelete: ExcelData) => {
-        window.electron.invoke('delete-from-file', shiftToDelete)
-            .then((response: { success: boolean; error?: string }) => {
-                if(response.success) {
-                    enqueueSnackbar(`Deleted Shift: ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime}`, 'warning')
-                    return getShifts()
-                } else {
-                    enqueueSnackbar(`Failed to delete Shift: ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime}`, 'error')
-                    throw new Error(response.error || 'Failed to delete shift')
-                }
-            })
-            .catch((error: string) => {
-                console.error('Error invoking delete from file:', error)
-            })
-    }
-
     const checkForUpdates = async () => {
         const updates = await window.electron.invoke('check-for-updates')
         if(updates.check){
@@ -110,9 +86,24 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
     }, [])
 
     return (
-        <div className='home'>
+        <Box 
+            display='flex'
+            flexDirection='column'
+            height='100%'
+            width='100%'
+            overflow='hidden'
+            borderRadius='5px'
+            textAlign='center'
+            gap='1rem'
+            p='1rem'
+            boxSizing='border-box'
+            sx={{
+                background:'white',
+            }}
+            // justifyContent={'space-between'}
+        >
             <Box
-                display='flexbox'
+                display='flex'
                 flexDirection='column'
                 position='relative'
             >
@@ -154,67 +145,28 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                         </IconButton>
                     </Tooltip>
                 )}
-                
-                
             </Box>
             
-            <ModernTabs />
-
-            <Paper className='shift-container'>
-                <TableContainer>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>ID</TableCell>
-                                <TableCell>Day</TableCell>
-                                <TableCell>Shift Start</TableCell>
-                                <TableCell>Shift End</TableCell>
-                                <TableCell>Remove</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {shifts.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan = {5} align='center'>
-                                        No shifts found. Add a shift to continue!
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                shifts.map((shift, index) => (
-                                <TableRow key={index}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell>{shift.day}</TableCell>
-                                    <TableCell>{shift.startTime}</TableCell>
-                                    <TableCell>{shift.endTime}</TableCell>
-                                    <TableCell>
-                                        <Tooltip title="Delete">
-                                            <IconButton
-                                                color = "error"
-                                                className='no-outline'
-                                                onClick={() => handleDeleteShift(shift)}
-                                            >
-                                                <DeleteIcon/>
-                                            </IconButton>
-                                        </Tooltip>
-                                    </TableCell>
-                                </TableRow>
-                            )))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Paper>
+            <Box flex={1} display={'flex'} flexDirection={'column'} overflow={'hidden'}>
+                <ModernTabs />
+            </Box>
             
-            <div className='button-container'>
+            <Box
+                display={'flex'}
+                justifyContent={'center'}
+                gap={2}
+                p={1}
+            >
                 <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal}>
                     Add Shift
                 </Button>
                 <Button variant="contained" color='secondary' onClick={onNavigateToCalander} disabled={shifts.length === 0}>
                     Continue
                 </Button>
-            </div>
+            </Box>
 
             <AddShiftModal open={modalOpen} onClose={handleCloseModal} onAddShift={handleSaveShift}></AddShiftModal>
-        </div>
+        </Box>
     )
 }
 
