@@ -8,6 +8,7 @@ import {
     Container,
     Badge,
     Tooltip,
+    Paper
 } from '@mui/material';
 
 import DownloadIcon from '@mui/icons-material/Download'
@@ -147,9 +148,15 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 )}
             </Box>
             
-            <Box flex={1} display={'flex'} flexDirection={'column'} overflow={'hidden'}>
+            <Paper sx={{
+                flex: '1',
+                display: 'flex', 
+                flexDirection: 'column',
+                overflow:'hidden',
+                height: '100%'
+            }}>
                 <ModernTabs />
-            </Box>
+            </Paper>
             
             <Box
                 display={'flex'}
@@ -157,10 +164,10 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 gap={2}
                 p={1}
             >
-                <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal}>
+                <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal} sx={{color: 'white', fontWeight: 'bold'}}>
                     Add Shift
                 </Button>
-                <Button variant="contained" color='secondary' onClick={onNavigateToCalander} disabled={shifts.length === 0}>
+                <Button variant="contained" color='secondary' onClick={onNavigateToCalander} disabled={shifts.length === 0} sx={{color: 'white', fontWeight: 'bold'}}>
                     Continue
                 </Button>
             </Box>

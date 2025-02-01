@@ -4,7 +4,6 @@ import {
     TableBody, 
     TableCell, 
     TableContainer,
-    Paper,
     TableHead,
     TableRow,
     IconButton,
@@ -36,11 +35,12 @@ const ModernTab = styled(Tab) (({ theme }) => ({
 }));
 
 const ModernTabList = styled(TabList) (({ theme }) => ({
+    borderBottom: `1px solid ${theme.palette.divider}`,
+
     '& .MuiTabs-indicator': {
         backgroundColor: theme.palette.primary.main,
-        height: '0.15rem'
+        height: '0.15rem',
     },
-    
     
     '&.MuiTabs-scroller': {
         overflow: 'visible !important',
@@ -49,14 +49,16 @@ const ModernTabList = styled(TabList) (({ theme }) => ({
 
 const ModernTabPanel = styled(TabPanel) (({ theme }) => ({
     padding: theme.spacing(0),
-    height: '100%',
-    flex: 1
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden'
 }));
 
 function ModernTabs() {
     const { enqueueSnackbar } = useSnackbar();
     const [shifts, setShift] = useState<ExcelData[]>([]);
-    const [tabValue, setTabValue] = useState('1');
+    const [tabValue, setTabValue] = useState('0');
     const jobTitles = useState(['Test 1', 'Test 2', 'Test 3'])
 
     const getShifts = () => {
@@ -107,62 +109,59 @@ function ModernTabs() {
                         ))}
                     </ModernTabList>
                 </Box>
-                {jobTitles[0].map((_job, index) => (
-                    <ModernTabPanel key={index} value={`${index}`}>
-                        <Paper
-                            sx={{
-                                flex:1,
-                                display:'flex',
-                                flexDirection: 'column',
-                                overflow:'auto',
-                                height: '100%',
-                                border: '1px #dedede solid'
-                            }}
-                        >
-                            <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
-                                <Table>
-                                    <TableHead>
+                
+                <ModernTabPanel value={`${tabValue}`} aria-selected>
+                    <Box
+                        sx={{
+                            flex:1,
+                            display:'flex',
+                            flexDirection: 'column',
+                            overflow:'auto',
+                        }}
+                    >
+                        <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
+                            <Table stickyHeader>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>ID</TableCell>
+                                        <TableCell>Day</TableCell>
+                                        <TableCell>Shift Start</TableCell>
+                                        <TableCell>Shift End</TableCell>
+                                        <TableCell>Remove</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {shifts.length === 0 ? (
                                         <TableRow>
-                                            <TableCell>ID</TableCell>
-                                            <TableCell>Day</TableCell>
-                                            <TableCell>Shift Start</TableCell>
-                                            <TableCell>Shift End</TableCell>
-                                            <TableCell>Remove</TableCell>
+                                            <TableCell colSpan = {5} align='center'>
+                                                No shifts found. Add a shift to continue!
+                                            </TableCell>
                                         </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {shifts.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan = {5} align='center'>
-                                                    No shifts found. Add a shift to continue!
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            shifts.map((shift, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell>{index + 1}</TableCell>
-                                                <TableCell>{shift.day}</TableCell>
-                                                <TableCell>{shift.startTime}</TableCell>
-                                                <TableCell>{shift.endTime}</TableCell>
-                                                <TableCell>
-                                                    <Tooltip title="Delete">
-                                                        <IconButton
-                                                            color = "error"
-                                                            className='no-outline'
-                                                            onClick={() => handleDeleteShift(shift)}
-                                                        >
-                                                            <DeleteIcon/>
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </TableCell>
-                                            </TableRow>
-                                        )))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </Paper>
-                    </ModernTabPanel>
-                ))}
+                                    ) : (
+                                        shifts.map((shift, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell>{index + 1}</TableCell>
+                                            <TableCell>{shift.day}</TableCell>
+                                            <TableCell>{shift.startTime}</TableCell>
+                                            <TableCell>{shift.endTime}</TableCell>
+                                            <TableCell>
+                                                <Tooltip title="Delete">
+                                                    <IconButton
+                                                        color = "error"
+                                                        className='no-outline'
+                                                        onClick={() => handleDeleteShift(shift)}
+                                                    >
+                                                        <DeleteIcon/>
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </TableCell>
+                                        </TableRow>
+                                    )))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Box>
+                </ModernTabPanel>
             </TabContext>
         </Box>
     );
