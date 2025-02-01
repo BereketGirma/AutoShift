@@ -14,6 +14,7 @@ import {
 import {  TabList, TabPanel, TabContext } from '@mui/lab'
 import { styled } from '@mui/system'
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/AddCircle'
 import { useSnackbar } from './SnackbarProvider';
 import { ExcelData } from '../../electron/util';
 
@@ -25,20 +26,23 @@ const ModernTab = styled(Tab) (({ theme }) => ({
     borderRadius: '8px 8px 0 0',
     transition: 'all 0.3s ease',
     '&.Mui-selected': {
-        backgroundColor: theme.palette.primary.light,
+        background: theme.palette.primary.light,
         // borderBottom: '6px solid' + theme.palette.primary.main,
     },
 
     '&:hover': {
-        backgroundColor: theme.palette.primary.light,
+        background: theme.palette.primary.light,
     },
 }));
 
-const ModernTabList = styled(TabList) (({ theme }) => ({
+const ModernTabList = styled(TabList, {
+    shouldForwardProp: (prop) => 
+        !['fullWidth', 'textColor', 'selectionFollowsFocus'].includes(prop.toString())
+}) (({ theme }) => ({
     borderBottom: `1px solid ${theme.palette.divider}`,
 
     '& .MuiTabs-indicator': {
-        backgroundColor: theme.palette.primary.main,
+        background: theme.palette.primary.main,
         height: '0.15rem',
     },
     
@@ -59,7 +63,7 @@ function ModernTabs() {
     const { enqueueSnackbar } = useSnackbar();
     const [shifts, setShift] = useState<ExcelData[]>([]);
     const [tabValue, setTabValue] = useState('0');
-    const jobTitles = useState(['Test 1', 'Test 2', 'Test 3'])
+    const [jobTitles, setJobTitles] = useState(['Test 1', 'Test 2', 'Test 3'])
 
     const getShifts = () => {
         window.electron.invoke('read-excel-file')
@@ -99,14 +103,31 @@ function ModernTabs() {
         setTabValue(newValue);
     };
 
+    const addNewTab = async () => {
+        try{
+            setJobTitles([...jobTitles, 'Test 4'])
+            console.log('Creating new tab...')
+            const result = await window.electron.invoke('create-new-sheet', 'Test 4')
+            console.log(result)
+        } catch (error) {
+            console.error('Error occured: ', error)
+        }
+    }
+
     return (
         <Box width={'100%'} height={'100%'} display={'flex'} flexDirection={'column'}>
             <TabContext value={tabValue}>
                 <Box>
                     <ModernTabList onChange={handleTabChange} scrollButtons="auto" variant='scrollable'>
-                        {jobTitles[0].map((job, index) => (
+                        {jobTitles.map((job, index) => (
                             <ModernTab key={index} label={job} value={`${index}`}></ModernTab>
                         ))}
+                        <Box alignContent={'center'}>
+                            <IconButton color='primary' onClick={() => addNewTab()}>
+                                <AddIcon/>
+                            </IconButton>
+                        </Box>
+                        
                     </ModernTabList>
                 </Box>
                 
