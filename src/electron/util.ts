@@ -111,6 +111,14 @@ export interface EventPayloadMapping {
         response: { 
             confirmed: boolean 
         }
+    },
+
+    'create-new-sheet': {
+        request: { sheetName: string },
+        response: {
+            success: boolean,
+            error?: string
+        }
     }
     //Add more events here
 }
@@ -138,8 +146,7 @@ export async function getPlatform(): Promise<string> {
         return "win32"
     } else if(platform === "darwin") {
         return arch === "arm64" ? "mac-arm64" : "mac-x64"
-    } else if(platform === "linux") {
-        return "linux64"
     }
-    throw new Error("Unsupported platform. Only Windows, MacOS and Linux are supported.")
+    
+    throw new Error("Unsupported platform. Only Windows or MacOS are supported.")
 }

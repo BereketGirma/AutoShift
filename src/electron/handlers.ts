@@ -149,4 +149,13 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         return response;
     })
 
+    ipc.handle('create-new-sheet', async (_event, sheetName: string) => {
+        try{
+            await excelOps.createNewSheet(sheetName)
+            return { success: true}
+        } catch (error: any){
+            return { success: false, error: error.message || 'Failed to save shift'}
+        }
+    })
+
 }

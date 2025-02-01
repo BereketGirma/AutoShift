@@ -10,6 +10,7 @@ export class ExcelOperations {
     private worksheet: XLSX.WorkSheet | null = null;
     private readonly sheetName = "Shifts sheet"
     private dayOrder: string[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sudnay"]
+    private sheetNameList: string[] = []
 
 
     constructor() {
@@ -251,6 +252,22 @@ export class ExcelOperations {
             this.worksheet = this.workbook.Sheets[this.sheetName]
         } else {
             this.createNewWorkbook();
+        }
+    }
+
+    public async createNewSheet(sheetName: string){
+        this.sheetNameList.push(sheetName)
+        try{
+            const headers = [['day', 'startTime', 'endTime']];
+            this.worksheet = XLSX.utils.aoa_to_sheet(headers)
+            if (this.workbook) {
+                XLSX.utils.book_append_sheet(this.workbook, this.worksheet, sheetName);
+                XLSX.writeFile(this.workbook, this.filePath)
+            } else {
+                throw new Error('Workbook is not loaded.');
+            }
+        } catch (error: any){
+            throw error
         }
     }
 }
