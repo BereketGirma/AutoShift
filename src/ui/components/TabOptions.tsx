@@ -10,6 +10,10 @@ import {
     Box,
     Tooltip,
     Tab,
+    Modal,
+    Typography,
+    Button,
+    TextField
 } from '@mui/material';
 import {  TabList, TabPanel, TabContext } from '@mui/lab'
 import { styled } from '@mui/system'
@@ -64,6 +68,8 @@ function ModernTabs() {
     const [shifts, setShift] = useState<ExcelData[]>([]);
     const [tabValue, setTabValue] = useState('0');
     const [jobTitles, setJobTitles] = useState(['Test 1', 'Test 2', 'Test 3'])
+    const [tabModalOpen, setTabModalOpen] = useState(false);
+    const [newTabTitle, setNewTabTitle] = useState('');
 
     const getShifts = () => {
         window.electron.invoke('read-excel-file')
@@ -95,6 +101,18 @@ function ModernTabs() {
             })
     }
 
+    const handleOpenModal = () => {
+        setTabModalOpen(true)
+    }
+
+    const handleCloseModal = () => {
+        setTabModalOpen(false);
+    }
+
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setNewTabTitle(event.target.value)
+    }
+
     useEffect(() => {
         getShifts();
     }, [])
@@ -103,12 +121,13 @@ function ModernTabs() {
         setTabValue(newValue);
     };
 
-    const addNewTab = async () => {
+    const handleAddNewTab = async () => {
         try{
-            setJobTitles([...jobTitles, 'Test 4'])
+            setJobTitles([...jobTitles, newTabTitle])
             console.log('Creating new tab...')
-            const result = await window.electron.invoke('create-new-sheet', 'Test 4')
+            const result = await window.electron.invoke('create-new-sheet', newTabTitle)
             console.log(result)
+            setTabModalOpen(false);
         } catch (error) {
             console.error('Error occured: ', error)
         }
@@ -123,7 +142,7 @@ function ModernTabs() {
                             <ModernTab key={index} label={job} value={`${index}`}></ModernTab>
                         ))}
                         <Box alignContent={'center'}>
-                            <IconButton color='primary' onClick={() => addNewTab()}>
+                            <IconButton color='primary' onClick={() => handleOpenModal()}>
                                 <AddIcon/>
                             </IconButton>
                         </Box>
@@ -184,6 +203,53 @@ function ModernTabs() {
                     </Box>
                 </ModernTabPanel>
             </TabContext>
+
+        {tabModalOpen && (
+            <Modal open={tabModalOpen}>
+                <Box sx={{
+                    display:'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    bgcolor: 'background.paper',
+                    borderRadius: '5px',
+                    boxShadow: 24,
+                    p: 2,
+                    width: '60%',
+                    textAlign: 'center',
+                    maxWidth: '400px',
+                    gap: 2
+                }}>
+
+                    {/* Modal title */}
+                    <Typography variant='h6' component = 'h2' color='black'>
+                        Add New Tab
+                    </Typography>
+
+                    <TextField label="Tab Name" variant="outlined" fullWidth onChange={handleChange}/>
+
+                    {/* Button container */}
+                    <Box 
+                        sx={{ 
+                            display: 'flex', 
+                            justifyContent:'center', 
+                            gap: 2
+                        }}
+                    >
+                        <Button variant='contained' color="error" onClick={handleCloseModal}>
+                            Cancel
+                        </Button>
+                        <Button variant='contained' color="primary" onClick={handleAddNewTab}>
+                            Save
+                        </Button>
+                    </Box>
+                </Box>
+            </Modal>
+        )}
+
         </Box>
     );
 }
