@@ -65,28 +65,26 @@ const ModernTabPanel = styled(TabPanel) (({ theme }) => ({
 
 function ModernTabs() {
     const { enqueueSnackbar } = useSnackbar();
-    const [shifts, setShift] = useState<ExcelData[]>([]);
+    const [shifts, setShift] = useState<Record<string, ExcelData[]>>({});
     const [tabValue, setTabValue] = useState('0');
-    const [jobTitles, setJobTitles] = useState(['Test 1', 'Test 2', 'Test 3'])
+    // const [jobTitles, setJobTitles] = useState(['Test 1', 'Test 2', 'Test 3'])
     const [tabModalOpen, setTabModalOpen] = useState(false);
     const [newTabTitle, setNewTabTitle] = useState('');
+    const sheetNames = Object.keys(shifts)
+    const selectedSheet = sheetNames[parseInt(tabValue)] || '';
 
     const getShifts = () => {
         window.electron.invoke('read-excel-file')
-            .then((response: { success: boolean, data:ExcelData[]}) => {
-                if(Array.isArray(response.data) && response.data.length > 0){
-                    setShift(response.data);
-                } else {
-                    setShift([]);
-                }
+            .then((response: { success: boolean, data: Record<string, ExcelData[]>}) => {
+                setShift(response.data || {})
             })
             .catch((error: string) => {
                 console.error('Error reading shifts:',error)
             })
     }
 
-    const handleDeleteShift = (shiftToDelete: ExcelData) => {
-        window.electron.invoke('delete-from-file', shiftToDelete)
+    const handleDeleteShift = (shiftToDelete: ExcelData, sheetName: string) => {
+        window.electron.invoke('delete-from-file', { shiftToDelete, sheetName })
             .then((response: { success: boolean; error?: string }) => {
                 if(response.success) {
                     enqueueSnackbar(`Deleted Shift: ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime}`, 'warning')
@@ -113,17 +111,19 @@ function ModernTabs() {
         setNewTabTitle(event.target.value)
     }
 
-    useEffect(() => {
-        getShifts();
-    }, [])
-
     const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
+        console.log('Tab index', newValue)
         setTabValue(newValue);
     };
 
     const handleAddNewTab = async () => {
         try{
-            setJobTitles([...jobTitles, newTabTitle])
+            if(!newTabTitle.trim()){
+                enqueueSnackbar("Tab name can't be empty", 'error');
+                return
+            };
+            
+            // setJobTitles([...jobTitles, newTabTitle])
             console.log('Creating new tab...')
             const result = await window.electron.invoke('create-new-sheet', newTabTitle)
             console.log(result)
@@ -133,13 +133,17 @@ function ModernTabs() {
         }
     }
 
+    useEffect(() => {
+        getShifts();
+    }, [])
+
     return (
         <Box width={'100%'} height={'100%'} display={'flex'} flexDirection={'column'}>
             <TabContext value={tabValue}>
                 <Box>
                     <ModernTabList onChange={handleTabChange} scrollButtons="auto" variant='scrollable'>
-                        {jobTitles.map((job, index) => (
-                            <ModernTab key={index} label={job} value={`${index}`}></ModernTab>
+                        {sheetNames.map((sheet, index) => (
+                            <ModernTab key={index} label={sheet} value={`${index}`}></ModernTab>
                         ))}
                         <Box alignContent={'center'}>
                             <IconButton color='primary' onClick={() => handleOpenModal()}>
@@ -171,32 +175,33 @@ function ModernTabs() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {shifts.length === 0 ? (
+                                    {selectedSheet && shifts[selectedSheet]?.length > 0 ? (
+                                        shifts[selectedSheet].map((shift, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell>{index + 1}</TableCell>
+                                                <TableCell>{shift.day}</TableCell>
+                                                <TableCell>{shift.startTime}</TableCell>
+                                                <TableCell>{shift.endTime}</TableCell>
+                                                <TableCell>
+                                                    <Tooltip title="Delete">
+                                                        <IconButton
+                                                            color = "error"
+                                                            className='no-outline'
+                                                            onClick={() => handleDeleteShift(shift, selectedSheet)}
+                                                        >
+                                                            <DeleteIcon/>
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
                                         <TableRow>
                                             <TableCell colSpan = {5} align='center'>
                                                 No shifts found. Add a shift to continue!
                                             </TableCell>
                                         </TableRow>
-                                    ) : (
-                                        shifts.map((shift, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell>{index + 1}</TableCell>
-                                            <TableCell>{shift.day}</TableCell>
-                                            <TableCell>{shift.startTime}</TableCell>
-                                            <TableCell>{shift.endTime}</TableCell>
-                                            <TableCell>
-                                                <Tooltip title="Delete">
-                                                    <IconButton
-                                                        color = "error"
-                                                        className='no-outline'
-                                                        onClick={() => handleDeleteShift(shift)}
-                                                    >
-                                                        <DeleteIcon/>
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </TableCell>
-                                        </TableRow>
-                                    )))}
+                                    )}
                                 </TableBody>
                             </Table>
                         </TableContainer>
