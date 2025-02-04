@@ -26,7 +26,7 @@ export interface EventPayloadMapping {
         request: void,
         response: {
             success: boolean;
-            data?: ExcelData[];
+            data?: Record<string, ExcelData[]>;
             error?: string;
         };
     };

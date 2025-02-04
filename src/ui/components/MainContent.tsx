@@ -30,7 +30,8 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
 
     const getShifts = () => {
         window.electron.invoke('read-excel-file')
-            .then((response: { success: boolean, data:ExcelData[]}) => {
+            .then((response: { success: boolean, data: Record<string, ExcelData[]> }) => {
+                console.log(response.data)
                 if(Array.isArray(response.data) && response.data.length > 0){
                     setShift(response.data);
                 } else {

@@ -88,9 +88,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     })
 
     //Handles writing into excel file
-    ipc.handle('write-into-file', async (_event, newData: ExcelData[]) => {
+    ipc.handle('write-into-file', async (_event, sheetName: string, newData: ExcelData[]) => {
         try{
-            await excelOps.writeIntoFile(newData)
+            await excelOps.writeIntoFile(sheetName, newData)
             return { success: true }
         } catch (error: any) {
             return {success: false, error: error.message || 'Failed to save shift'}
@@ -98,9 +98,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     })
 
     //Handles data deletion from excel file
-    ipc.handle('delete-from-file', async (_event, removedData: ExcelData) => {
+    ipc.handle('delete-from-file', async (_event, sheetName: string, removedData: ExcelData) => {
         try{
-            await excelOps.deleteFromFile(removedData);
+            await excelOps.deleteFromFile(removedData, sheetName);
             return { success: true }
         } catch (error: any) {
             return { success: false, error: error.message || 'Failed to delete shift'}
@@ -112,7 +112,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         try {
             console.log("Running Selenium script...")
             if (mainWindow) {
-            await runSeleniumScript(mainWindow, await excelOps.readExcelFile(), startDate, endDate);
+            // await runSeleniumScript(mainWindow, await excelOps.readExcelFile(), startDate, endDate);
             } else {
             throw new Error('Main window is not initialized');
             }
