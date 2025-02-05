@@ -108,7 +108,6 @@ export class ExcelOperations {
             }
             
             const existingData = await this.readExcelFile()
-            console.log(existingData)
 
             //Check for an collision with shifts before adding
             if(this.checkCollidingData(existingData[sheetName], data)){
@@ -223,7 +222,7 @@ export class ExcelOperations {
      * @param shiftToDelete 
      * @returns 
      */
-    public async deleteFromFile(shiftToDelete: ExcelData, sheetName: string = this.sheetName): Promise<void> {
+    public async deleteFromFile(shiftToDelete: ExcelData, sheetName: string): Promise<void> {
         try{ 
             //Checking if the file exists at the file path
             if(!fs.existsSync(this.filePath)) {

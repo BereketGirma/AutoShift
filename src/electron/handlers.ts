@@ -98,7 +98,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     })
 
     //Handles data deletion from excel file
-    ipc.handle('delete-from-file', async (_event, sheetName: string, removedData: ExcelData) => {
+    ipc.handle('delete-from-file', async (_event, removedData: ExcelData, sheetName: string,) => {
         try{
             await excelOps.deleteFromFile(removedData, sheetName);
             return { success: true }
