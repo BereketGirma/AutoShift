@@ -16,7 +16,7 @@ import { useSnackbar } from './SnackbarProvider';
 interface AddShiftModalProps {
     open: boolean;
     onClose: () => void;
-    onAddShift: (Shift: { day: string; startTime: string; endTime: string}) => void;
+    onAddShift: (sheetName: string, Shift: { day: string; startTime: string; endTime: string}) => void;
 }
 
 const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift }) => {
@@ -61,7 +61,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
             enqueueSnackbar("Start time must be before end time.", 'error');
             return;
         }
-        onAddShift(shiftData);
+        onAddShift("Shifts sheet",shiftData);
         setShiftData({ day: '', startTime: '', endTime: ''})
         onClose()
     }

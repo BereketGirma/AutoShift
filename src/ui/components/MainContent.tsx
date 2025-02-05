@@ -25,25 +25,24 @@ interface MainContentProps {
 
 function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentProps) {
     const { enqueueSnackbar } = useSnackbar();
-    const [shifts, setShift] = useState<ExcelData[]>([]);
+    const [shifts, setShift] = useState<Record<string, ExcelData[]>>({});
     const [hasUpdates, setHasUpdates] = useState<boolean>(true);
+    const [modalOpen, setModalOpen] = useState(false);
 
     const getShifts = () => {
         window.electron.invoke('read-excel-file')
             .then((response: { success: boolean, data: Record<string, ExcelData[]> }) => {
                 console.log(response.data)
-                if(Array.isArray(response.data) && response.data.length > 0){
+                if(response.data && typeof response.data === 'object'){
                     setShift(response.data);
                 } else {
-                    setShift([]);
+                    setShift({});
                 }
             })
             .catch((error: string) => {
                 console.error('Error reading shifts:',error)
             })
     }
-
-    const [modalOpen, setModalOpen] = useState(false);
 
     const handleOpenModal = () => {
         setModalOpen(true);
@@ -53,8 +52,8 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
         setModalOpen(false);
     };
 
-    const handleSaveShift = (data: ExcelData) => {
-        window.electron.invoke('write-into-file', [data])
+    const handleSaveShift = (sheetName: string, data: ExcelData) => {
+        window.electron.invoke('write-into-file', sheetName, [data])
             .then((response: { success: boolean; error?: string }) => {
                 if(response.success) {
                     enqueueSnackbar(`Saved Shift: ${data.day} from ${data.startTime} to ${data.endTime}`, 'success')
@@ -156,7 +155,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 overflow:'hidden',
                 height: '100%'
             }}>
-                <ModernTabs />
+                <ModernTabs shifts={shifts} getShifts={getShifts} />
             </Paper>
             
             <Box
@@ -168,7 +167,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal} sx={{color: 'white', fontWeight: 'bold'}}>
                     Add Shift
                 </Button>
-                <Button variant="contained" color='secondary' onClick={onNavigateToCalander} disabled={shifts.length === 0} sx={{color: 'white', fontWeight: 'bold'}}>
+                <Button variant="contained" color='secondary' onClick={onNavigateToCalander} sx={{color: 'white', fontWeight: 'bold'}}>
                     Continue
                 </Button>
             </Box>
