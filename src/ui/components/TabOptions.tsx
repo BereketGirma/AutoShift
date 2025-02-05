@@ -63,9 +63,16 @@ const ModernTabPanel = styled(TabPanel) (({ theme }) => ({
     overflow: 'hidden'
 }));
 
-function ModernTabs() {
+
+
+interface ModernTabsProps {
+    shifts: Record<string, ExcelData[]>;
+    getShifts: () => void;
+}
+
+function ModernTabs({shifts, getShifts}: ModernTabsProps) {
     const { enqueueSnackbar } = useSnackbar();
-    const [shifts, setShift] = useState<Record<string, ExcelData[]>>({});
+    // const [shifts, setShift] = useState<Record<string, ExcelData[]>>({});
     const [tabValue, setTabValue] = useState('0');
     // const [jobTitles, setJobTitles] = useState(['Test 1', 'Test 2', 'Test 3'])
     const [tabModalOpen, setTabModalOpen] = useState(false);
@@ -73,18 +80,8 @@ function ModernTabs() {
     const sheetNames = Object.keys(shifts)
     const selectedSheet = sheetNames[parseInt(tabValue)] || '';
 
-    const getShifts = () => {
-        window.electron.invoke('read-excel-file')
-            .then((response: { success: boolean, data: Record<string, ExcelData[]>}) => {
-                setShift(response.data || {})
-            })
-            .catch((error: string) => {
-                console.error('Error reading shifts:',error)
-            })
-    }
-
     const handleDeleteShift = (shiftToDelete: ExcelData, sheetName: string) => {
-        window.electron.invoke('delete-from-file', { shiftToDelete, sheetName })
+        window.electron.invoke('delete-from-file', shiftToDelete, 'Shifts sheet')
             .then((response: { success: boolean; error?: string }) => {
                 if(response.success) {
                     enqueueSnackbar(`Deleted Shift: ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime}`, 'warning')
@@ -134,8 +131,9 @@ function ModernTabs() {
     }
 
     useEffect(() => {
-        getShifts();
-    }, [])
+        console.log('Tab name', sheetNames)
+        console.log('Shifts', shifts)
+    }, [shifts])
 
     return (
         <Box width={'100%'} height={'100%'} display={'flex'} flexDirection={'column'}>
