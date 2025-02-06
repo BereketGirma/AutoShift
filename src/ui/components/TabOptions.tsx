@@ -115,15 +115,25 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     const handleAddNewTab = async () => {
         try{
             if(!newTabTitle.trim()){
-                enqueueSnackbar("Tab name can't be empty", 'error');
+                enqueueSnackbar("Tab name can't be empty!", 'error');
                 return
             };
+
+            if(sheetNames.includes(newTabTitle)){
+                enqueueSnackbar(`Tab for "${newTabTitle}" already exists! Please select a new name.`, 'error')
+                return
+            }
             
             await window.electron.invoke('create-new-sheet', newTabTitle)
             getShifts()
+
+            enqueueSnackbar(`${newTabTitle} has been created!`, 'success')
+            setTabValue((sheetNames.length).toString())
             setTabModalOpen(false);
         } catch (error) {
             console.error('Error occured: ', error)
+            enqueueSnackbar(`Failed to add ${newTabTitle} tab!`, 'error')
+
         }
     }
 
