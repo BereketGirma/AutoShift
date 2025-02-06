@@ -21,6 +21,7 @@ import ModernTabs from './TabOptions';
 interface MainContentProps {
     onNavigateToCalander: () => void
     onNavigateToUpdate: () => void;
+    onSheetSelected?: (sheet: string) => void;
 }
 
 function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentProps) {
@@ -28,6 +29,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
     const [shifts, setShift] = useState<Record<string, ExcelData[]>>({});
     const [hasUpdates, setHasUpdates] = useState<boolean>(true);
     const [modalOpen, setModalOpen] = useState(false);
+    const [sheetSelected, setSheetSelected] = useState<string | null>(null);
 
     const getShifts = () => {
         window.electron.invoke('read-excel-file')
@@ -52,8 +54,9 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
         setModalOpen(false);
     };
 
-    const handleSaveShift = (sheetName: string, data: ExcelData) => {
-        window.electron.invoke('write-into-file', sheetName, [data])
+    const handleSaveShift = (data: ExcelData) => {
+        console.log('Writing into sheet:',sheetSelected)
+        window.electron.invoke('write-into-file', sheetSelected, [data])
             .then((response: { success: boolean; error?: string }) => {
                 if(response.success) {
                     enqueueSnackbar(`Saved Shift: ${data.day} from ${data.startTime} to ${data.endTime}`, 'success')
@@ -80,6 +83,11 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
             // setHasUpdates(false)
         }
     };
+
+    const handleSheetSelected = (sheet: string) => {
+        console.log('selected sheet:',sheet)
+        setSheetSelected(sheet)
+    }
 
     useEffect(() => {
         checkForUpdates();
@@ -155,7 +163,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 overflow:'hidden',
                 height: '100%'
             }}>
-                <ModernTabs shifts={shifts} getShifts={getShifts} />
+                <ModernTabs shifts={shifts} getShifts={getShifts} onSheetSelected={handleSheetSelected}/>
             </Paper>
             
             <Box

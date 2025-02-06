@@ -68,20 +68,19 @@ const ModernTabPanel = styled(TabPanel) (({ theme }) => ({
 interface ModernTabsProps {
     shifts: Record<string, ExcelData[]>;
     getShifts: () => void;
+    onSheetSelected?: (sheet: string) => void;
 }
 
-function ModernTabs({shifts, getShifts}: ModernTabsProps) {
+function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     const { enqueueSnackbar } = useSnackbar();
-    // const [shifts, setShift] = useState<Record<string, ExcelData[]>>({});
     const [tabValue, setTabValue] = useState('0');
-    // const [jobTitles, setJobTitles] = useState(['Test 1', 'Test 2', 'Test 3'])
     const [tabModalOpen, setTabModalOpen] = useState(false);
     const [newTabTitle, setNewTabTitle] = useState('');
     const sheetNames = Object.keys(shifts)
     const selectedSheet = sheetNames[parseInt(tabValue)] || '';
 
     const handleDeleteShift = (shiftToDelete: ExcelData, sheetName: string) => {
-        window.electron.invoke('delete-from-file', shiftToDelete, 'Shifts sheet')
+        window.electron.invoke('delete-from-file', shiftToDelete, sheetName)
             .then((response: { success: boolean; error?: string }) => {
                 if(response.success) {
                     enqueueSnackbar(`Deleted Shift: ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime}`, 'warning')
@@ -120,10 +119,8 @@ function ModernTabs({shifts, getShifts}: ModernTabsProps) {
                 return
             };
             
-            // setJobTitles([...jobTitles, newTabTitle])
-            console.log('Creating new tab...')
-            const result = await window.electron.invoke('create-new-sheet', newTabTitle)
-            console.log(result)
+            await window.electron.invoke('create-new-sheet', newTabTitle)
+            getShifts()
             setTabModalOpen(false);
         } catch (error) {
             console.error('Error occured: ', error)
@@ -131,9 +128,10 @@ function ModernTabs({shifts, getShifts}: ModernTabsProps) {
     }
 
     useEffect(() => {
-        console.log('Tab name', sheetNames)
-        console.log('Shifts', shifts)
-    }, [shifts])
+        if(onSheetSelected){
+            onSheetSelected(selectedSheet)
+        }
+    }, [shifts, selectedSheet, onSheetSelected, getShifts])
 
     return (
         <Box width={'100%'} height={'100%'} display={'flex'} flexDirection={'column'}>
