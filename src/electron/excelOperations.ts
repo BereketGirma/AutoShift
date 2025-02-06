@@ -123,7 +123,7 @@ export class ExcelOperations {
 
             //If the workbook was not found, create one and add shifts
             if(this.workbook) {
-                this.workbook.Sheets[this.sheetName] = updatedWorksheet;
+                this.workbook.Sheets[sheetName] = updatedWorksheet;
                 XLSX.writeFile(this.workbook, this.filePath)
             } else {
                 throw new Error('Workbook is not loaded.');
@@ -241,7 +241,7 @@ export class ExcelOperations {
 
             // Check if workbook exists before updating file
             if(this.workbook){
-                this.workbook.Sheets[this.sheetName] = updatedWorksheet;
+                this.workbook.Sheets[sheetName] = updatedWorksheet;
             } else {
                 throw new Error('Workbook is not loaded.');
             }
