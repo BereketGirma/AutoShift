@@ -1,5 +1,5 @@
 import { ExcelOperations } from './excelOperations.js';
-import { runSeleniumScript } from './script.js';
+import { runSeleniumScript, collectJobTitles } from './script.js';
 import fs from 'fs';
 import { createIpcMain, ExcelData, getPlatform } from './util.js'
 import { ipcMain, BrowserWindow, shell } from 'electron';
@@ -155,6 +155,15 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
             return { success: true}
         } catch (error: any){
             return { success: false, error: error.message || 'Failed to save shift'}
+        }
+    })
+
+    ipc.handle('collect-job-titles', async () => {
+        try{
+            const jobTitles = await collectJobTitles(mainWindow)
+            return {success: true, list: jobTitles}
+        } catch (error: any){
+            return { success: false, error: error.message || 'Failed to collect job titles', list: [] }
         }
     })
 

@@ -139,6 +139,33 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
         }
     }
 
+    const handleAutoRetrieve = async () => {
+        console.log('Retrieving...')
+        try{
+            const jobTitles = await window.electron.invoke('collect-job-titles')
+            console.log(jobTitles)
+            if(jobTitles.success){
+                for (const job of jobTitles.list) {
+                    await window.electron.invoke('create-new-sheet', job);
+                }
+
+                enqueueSnackbar(`Successfully retrieved job titles`, 'success')
+                handleCloseModal();
+                getShifts()
+
+                return
+            } else {
+                enqueueSnackbar(`Failed to retrieve job titles`, 'error')
+                handleCloseModal();
+                return
+            }
+        } catch (error) {
+            handleCloseModal();
+            console.error('Error occured: ', error)
+            enqueueSnackbar(`System error: failed to retrieve data!`, 'error')
+        }
+    }
+
     useEffect(() => {
         if(onSheetSelected){
             onSheetSelected(selectedSheet)
@@ -252,7 +279,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                                 Enter Manually
                             </Button>
                             <Typography color='black'>or</Typography>
-                            <Button variant='contained'>
+                            <Button variant='contained' onClick={handleAutoRetrieve}>
                                 Auto retrieve
                             </Button>
                         </Box>

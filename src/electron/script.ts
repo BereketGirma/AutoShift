@@ -455,15 +455,15 @@ async function elementExists(driver: any, element: any): Promise<boolean>{
     }
 }
 
-async function collectJobTitles(window: any): Promise<void> {
-    await runScriptConfirmation(window)
+async function collectJobTitles(window: any): Promise<string[]> {
+    // await runScriptConfirmation(window)
 
-    sendProgressUpdates(window, 'Checking for chromedriver...', false)
+    // sendProgressUpdates(window, 'Checking for chromedriver...', false)
 
     //Check if chrome driver exists
     await ensureChromedriverExists(window);
 
-    sendProgressUpdates(window, 'Starting script', false)
+    // sendProgressUpdates(window, 'Starting script', false)
 
     //Initializing driver
     const options = new Options()
@@ -472,6 +472,8 @@ async function collectJobTitles(window: any): Promise<void> {
         .setChromeOptions(options)
         .setChromeService(new ServiceBuilder(chromedriverPath))
         .build();
+
+    const titlesList: string[] = [];
 
     try{
         //Launch driver and open the link
@@ -490,8 +492,9 @@ async function collectJobTitles(window: any): Promise<void> {
         console.log(jobTitles)
 
         for(let job of jobTitles){
-            let heading = job.findElement(By.css('.sectionHeading'))
+            let heading = await job.findElement(By.css('.sectionHeading'))
             let text = await heading.getText()
+            titlesList.push(text)
             console.log(text)
         }
 
@@ -499,7 +502,7 @@ async function collectJobTitles(window: any): Promise<void> {
         sendProgressUpdates(window, "Shift's successfully added!", true);
         await driver.sleep(5000)
         
-        return
+        return titlesList
 
     } catch(error){
         console.log(error)
@@ -508,7 +511,10 @@ async function collectJobTitles(window: any): Promise<void> {
         //Quit driver after process is done
         await driver.quit();
     }
+
+    console.log("Title list:", titlesList)
+    return titlesList
 }
 
 //Only exporting the selenium script since other functions are used by it already
-export { runSeleniumScript };
+export { runSeleniumScript, collectJobTitles };

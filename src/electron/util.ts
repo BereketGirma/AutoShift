@@ -119,6 +119,15 @@ export interface EventPayloadMapping {
             success: boolean,
             error?: string
         }
+    },
+
+    'collect-job-titles': {
+        request: void,
+        response: {
+            success: boolean,
+            list: string[],
+            error?: string
+        }
     }
     //Add more events here
 }
