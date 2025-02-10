@@ -455,5 +455,60 @@ async function elementExists(driver: any, element: any): Promise<boolean>{
     }
 }
 
+async function collectJobTitles(window: any): Promise<void> {
+    await runScriptConfirmation(window)
+
+    sendProgressUpdates(window, 'Checking for chromedriver...', false)
+
+    //Check if chrome driver exists
+    await ensureChromedriverExists(window);
+
+    sendProgressUpdates(window, 'Starting script', false)
+
+    //Initializing driver
+    const options = new Options()
+    const driver = await new Builder()
+        .forBrowser('chrome')
+        .setChromeOptions(options)
+        .setChromeService(new ServiceBuilder(chromedriverPath))
+        .build();
+
+    try{
+        //Launch driver and open the link
+        await driver.get("https://eservices.minnstate.edu/finance-student/timeWorked.do?campusid=071");
+
+        //Wait 2 minutes for the Add Time button to show up
+        //This is where the user has 2 minutes to login to website. it will terminate if not logged in with specified time 
+        const elementToWaitFor = By.id('addTime')
+        await driver.wait(until.elementLocated(elementToWaitFor), 120000)
+
+        //Initilizing driver window to control if window should be hidden
+        const driverWindow = driver.manage().window()
+        // await driverWindow.minimize()
+        
+        const jobTitles = await driver.findElements(By.css('.well.table-responsive'))
+        console.log(jobTitles)
+
+        for(let job of jobTitles){
+            let heading = job.findElement(By.css('.sectionHeading'))
+            let text = await heading.getText()
+            console.log(text)
+        }
+
+        //If no error occurs in the way, this will send a UI progress update
+        sendProgressUpdates(window, "Shift's successfully added!", true);
+        await driver.sleep(5000)
+        
+        return
+
+    } catch(error){
+        console.log(error)
+        sendProgressUpdates(window, "Error occured while adding shifts.", true)
+    } finally {
+        //Quit driver after process is done
+        await driver.quit();
+    }
+}
+
 //Only exporting the selenium script since other functions are used by it already
 export { runSeleniumScript };
