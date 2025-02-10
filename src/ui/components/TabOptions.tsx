@@ -78,6 +78,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     const [newTabTitle, setNewTabTitle] = useState('');
     const sheetNames = Object.keys(shifts)
     const selectedSheet = sheetNames[parseInt(tabValue)] || '';
+    const [manualEntry, setManualEntry] = useState(false);
 
     const handleDeleteShift = (shiftToDelete: ExcelData, sheetName: string) => {
         window.electron.invoke('delete-from-file', shiftToDelete, sheetName)
@@ -100,6 +101,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     }
 
     const handleCloseModal = () => {
+        setManualEntry(false)
         setTabModalOpen(false);
     }
 
@@ -129,7 +131,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
 
             enqueueSnackbar(`${newTabTitle} has been created!`, 'success')
             setTabValue((sheetNames.length).toString())
-            setTabModalOpen(false);
+            handleCloseModal();
         } catch (error) {
             console.error('Error occured: ', error)
             enqueueSnackbar(`Failed to add ${newTabTitle} tab!`, 'error')
@@ -240,23 +242,43 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                         Add New Tab
                     </Typography>
 
-                    <TextField label="Tab Name" variant="outlined" fullWidth onChange={handleChange}/>
+                    {!manualEntry ? (
+                        <Box 
+                            display={"flex"}
+                            flexDirection={"column"}
+                            gap={2}
+                        >
+                            <Button variant='contained' onClick={() => setManualEntry(true)}>
+                                Enter Manually
+                            </Button>
+                            <Typography color='black'>or</Typography>
+                            <Button variant='contained'>
+                                Auto retrieve
+                            </Button>
+                        </Box>
+                        ):(
+                            <>
+                                <TextField label="Tab Name" variant="outlined" fullWidth onChange={handleChange}/>
 
-                    {/* Button container */}
-                    <Box 
-                        sx={{ 
-                            display: 'flex', 
-                            justifyContent:'center', 
-                            gap: 2
-                        }}
-                    >
-                        <Button variant='contained' color="error" onClick={handleCloseModal}>
-                            Cancel
-                        </Button>
-                        <Button variant='contained' color="primary" onClick={handleAddNewTab}>
-                            Save
-                        </Button>
-                    </Box>
+                                {/* Button container */}
+                                <Box 
+                                    sx={{ 
+                                        display: 'flex', 
+                                        justifyContent:'center', 
+                                        gap: 2
+                                    }}
+                                >
+                                    <Button variant='contained' color="error" onClick={handleCloseModal}>
+                                        Cancel
+                                    </Button>
+                                    <Button variant='contained' color="primary" onClick={handleAddNewTab}>
+                                        Save
+                                    </Button>
+                                </Box>
+                            </>
+                        )
+                    }
+                    
                 </Box>
             </Modal>
         )}
