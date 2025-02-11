@@ -456,14 +456,8 @@ async function elementExists(driver: any, element: any): Promise<boolean>{
 }
 
 async function collectJobTitles(window: any): Promise<string[]> {
-    // await runScriptConfirmation(window)
-
-    // sendProgressUpdates(window, 'Checking for chromedriver...', false)
-
     //Check if chrome driver exists
     await ensureChromedriverExists(window);
-
-    // sendProgressUpdates(window, 'Starting script', false)
 
     //Initializing driver
     const options = new Options()
@@ -486,7 +480,7 @@ async function collectJobTitles(window: any): Promise<string[]> {
 
         //Initilizing driver window to control if window should be hidden
         const driverWindow = driver.manage().window()
-        // await driverWindow.minimize()
+        await driverWindow.minimize()
         
         const jobTitles = await driver.findElements(By.css('.well.table-responsive'))
         console.log(jobTitles)
@@ -498,15 +492,12 @@ async function collectJobTitles(window: any): Promise<string[]> {
             console.log(text)
         }
 
-        //If no error occurs in the way, this will send a UI progress update
-        sendProgressUpdates(window, "Shift's successfully added!", true);
-        await driver.sleep(5000)
+        await driver.sleep(500)
         
         return titlesList
 
     } catch(error){
         console.log(error)
-        sendProgressUpdates(window, "Error occured while adding shifts.", true)
     } finally {
         //Quit driver after process is done
         await driver.quit();
