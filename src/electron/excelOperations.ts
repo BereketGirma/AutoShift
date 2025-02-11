@@ -8,9 +8,7 @@ export class ExcelOperations {
     public filePath: string;
     private workbook: XLSX.WorkBook | null = null;
     private worksheet: XLSX.WorkSheet | null = null;
-    private readonly sheetName = "Shifts sheet"
     private dayOrder: string[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sudnay"]
-    private sheetNameList: string[] = []
 
 
     constructor() {
@@ -27,13 +25,13 @@ export class ExcelOperations {
         if(fs.existsSync(this.filePath)) {
             try{
                 this.workbook = XLSX.readFile(this.filePath)
-                const sheet = this.workbook.Sheets[this.sheetName]
+                const sheet = this.workbook.Sheets['Error Log']
 
                 //Making sure that the required sheet exists
                 if(!sheet){
                     this.createNewWorkbook();
                 } else {
-                    this.worksheet = this.workbook.Sheets[this.sheetName];
+                    this.worksheet = this.workbook.Sheets['Error Log'];
                 }
             } catch (error) {
                 this.createNewWorkbook()
@@ -50,10 +48,10 @@ export class ExcelOperations {
      */
     private async createNewWorkbook(): Promise<void> {
         try{
-            const headers = [['day', 'startTime', 'endTime']];
+            const headers = [['Timestamp', 'Function Name', 'Error Message']];
             this.worksheet = XLSX.utils.aoa_to_sheet(headers);
             this.workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(this.workbook, this.worksheet, 'Shifts sheet');
+            XLSX.utils.book_append_sheet(this.workbook, this.worksheet, 'Error Log');
             XLSX.writeFile(this.workbook, this.filePath)
         } catch (error:any) {
             throw error
@@ -81,9 +79,11 @@ export class ExcelOperations {
             const sheetDataDict: Record<string, ExcelData[]> = {};
 
             this.workbook.SheetNames.forEach(sheetName => {
-                const worksheet = this.workbook?.Sheets[sheetName];
-                if(worksheet) {
-                    sheetDataDict[sheetName] = XLSX.utils.sheet_to_json<ExcelData>(worksheet);
+                if(sheetName !== 'Error Log'){
+                    const worksheet = this.workbook?.Sheets[sheetName];
+                    if(worksheet) {
+                        sheetDataDict[sheetName] = XLSX.utils.sheet_to_json<ExcelData>(worksheet);
+                    }
                 }
             })
             console.log("Reading file",sheetDataDict)
@@ -260,7 +260,7 @@ export class ExcelOperations {
     private refreshWorkbook() {
         if(fs.existsSync(this.filePath)) {
             this.workbook = XLSX.readFile(this.filePath);
-            this.worksheet = this.workbook.Sheets[this.sheetName]
+            this.worksheet = this.workbook.Sheets['Error Log']
         } else {
             this.createNewWorkbook();
         }
@@ -271,7 +271,6 @@ export class ExcelOperations {
      * @param sheetName holds what the sheet will be called
      */
     public async createNewSheet(sheetName: string){
-        this.sheetNameList.push(sheetName)
         try{
             const headers = [['day', 'startTime', 'endTime']];
             this.worksheet = XLSX.utils.aoa_to_sheet(headers)
@@ -283,6 +282,51 @@ export class ExcelOperations {
             }
         } catch (error: any){
             throw error
+        }
+    }
+
+    public async deleteSheet(sheetName: string){
+        try{
+            if(!this.workbook || !this.workbook.SheetNames.includes(sheetName)) {
+                throw new Error (`Sheet "${sheetName}" does not exist.`)
+            }
+
+            //Remove sheet from the workbook
+            delete this.workbook.Sheets[sheetName]
+
+            //Remove the sheet name from the list
+            this.workbook.SheetNames = this.workbook.SheetNames.filter(name => name !== sheetName);
+
+            //Save changes
+            XLSX.writeFile(this.workbook, this.filePath);
+            console.log(`Sheet "${sheetName}" deleted successfully`)
+        } catch (error: any){
+            console.log('Error while deleting sheet:',error)
+            this.logError('delete sheet', error.message);
+        }
+    }
+
+    private logError(errorMessage: string, functionName: string): void {
+        try {
+            // Ensure everything is updated before logging error
+            this.refreshWorkbook() 
+
+            if(!this.workbook || !this.workbook.Sheets['Error Log']) {
+                console.error('Error Log sheet is missing.')
+                return;
+            }
+
+            const worksheet = this.workbook.Sheets['Error Log'];
+            const data: any[] = XLSX.utils.sheet_to_json(worksheet, { header:1 });
+
+            const timestamp = new Date().toISOString();
+            data.push([timestamp, functionName, errorMessage])
+
+            this.workbook.Sheets['Error Log'] = XLSX.utils.aoa_to_sheet(data);
+
+            XLSX.writeFile(this.workbook, this.filePath);
+        } catch (error) {
+            console.error('Failed to log error:', error)
         }
     }
 }
