@@ -13,7 +13,8 @@ import {
     Modal,
     Typography,
     Button,
-    TextField
+    TextField,
+    CircularProgress
 } from '@mui/material';
 import {  TabList, TabPanel, TabContext } from '@mui/lab'
 import { styled } from '@mui/system'
@@ -21,6 +22,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/AddCircle'
 import { useSnackbar } from './SnackbarProvider';
 import { ExcelData } from '../../electron/util';
+
 
 const ModernTab = styled(Tab) (({ theme }) => ({
     textTransform: 'none',
@@ -79,6 +81,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     const sheetNames = Object.keys(shifts)
     const selectedSheet = sheetNames[parseInt(tabValue)] || '';
     const [manualEntry, setManualEntry] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleDeleteShift = (shiftToDelete: ExcelData, sheetName: string) => {
         window.electron.invoke('delete-from-file', shiftToDelete, sheetName)
@@ -101,6 +104,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     }
 
     const handleCloseModal = () => {
+        setIsLoading(false)
         setManualEntry(false)
         setTabModalOpen(false);
     }
@@ -140,8 +144,8 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     }
 
     const handleAutoRetrieve = async () => {
-        console.log('Retrieving...')
         try{
+            setIsLoading(true)
             const jobTitles = await window.electron.invoke('collect-job-titles')
             console.log(jobTitles)
             if(jobTitles.success){
@@ -269,43 +273,53 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                         Add New Tab
                     </Typography>
 
-                    {!manualEntry ? (
+                    {isLoading ? (
                         <Box 
                             display={"flex"}
                             flexDirection={"column"}
                             gap={2}
+                            margin={4}
                         >
-                            <Button variant='contained' onClick={() => setManualEntry(true)}>
-                                Enter Manually
-                            </Button>
-                            <Typography color='black'>or</Typography>
-                            <Button variant='contained' onClick={handleAutoRetrieve}>
-                                Auto retrieve
-                            </Button>
+                            <CircularProgress size="3rem"/>
                         </Box>
-                        ):(
-                            <>
-                                <TextField label="Tab Name" variant="outlined" fullWidth onChange={handleChange}/>
-
-                                {/* Button container */}
-                                <Box 
-                                    sx={{ 
-                                        display: 'flex', 
-                                        justifyContent:'center', 
-                                        gap: 2
-                                    }}
-                                >
-                                    <Button variant='contained' color="error" onClick={handleCloseModal}>
-                                        Cancel
-                                    </Button>
-                                    <Button variant='contained' color="primary" onClick={handleAddNewTab}>
-                                        Save
-                                    </Button>
-                                </Box>
-                            </>
+                    ):(
+                        !manualEntry ? (
+                            <Box 
+                                display={"flex"}
+                                flexDirection={"column"}
+                                gap={2}
+                            >
+                                <Button variant='contained' onClick={() => setManualEntry(true)}>
+                                    Enter Manually
+                                </Button>
+                                <Typography color='black'>or</Typography>
+                                <Button variant='contained' onClick={handleAutoRetrieve}>
+                                    Auto retrieve
+                                </Button>
+                            </Box>
+                            ):(
+                                <>
+                                    <TextField label="Tab Name" variant="outlined" fullWidth onChange={handleChange}/>
+    
+                                    {/* Button container */}
+                                    <Box 
+                                        sx={{ 
+                                            display: 'flex', 
+                                            justifyContent:'center', 
+                                            gap: 2
+                                        }}
+                                    >
+                                        <Button variant='contained' color="error" onClick={handleCloseModal}>
+                                            Cancel
+                                        </Button>
+                                        <Button variant='contained' color="primary" onClick={handleAddNewTab}>
+                                            Save
+                                        </Button>
+                                    </Box>
+                                </>
+                            )
                         )
                     }
-                    
                 </Box>
             </Modal>
         )}
