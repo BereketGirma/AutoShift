@@ -128,6 +128,14 @@ export interface EventPayloadMapping {
             list: string[],
             error?: string
         }
+    },
+
+    'remove-job-title': {
+        request: { jobTitle: string },
+        response: {
+            success:boolean,
+            error?: string
+        }
     }
     //Add more events here
 }

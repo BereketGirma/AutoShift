@@ -167,4 +167,13 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         }
     })
 
+    ipc.handle('remove-job-title', async (_event, sheetName: string) => {
+        try{
+            await excelOps.deleteSheet(sheetName)
+            return {success: true}
+        } catch (error: any){
+            return { success: false, error: error.message || 'Failed to remove job title' }
+        }
+    })
+
 }
