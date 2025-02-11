@@ -266,6 +266,10 @@ export class ExcelOperations {
         }
     }
 
+    /**
+     * Creates and adds new sheet based on provided sheetName 
+     * @param sheetName holds what the sheet will be called
+     */
     public async createNewSheet(sheetName: string){
         this.sheetNameList.push(sheetName)
         try{
