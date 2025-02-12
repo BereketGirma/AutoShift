@@ -19,10 +19,10 @@ import {
 import {  TabList, TabPanel, TabContext } from '@mui/lab'
 import { styled } from '@mui/system'
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit'
 import AddIcon from '@mui/icons-material/AddCircle'
 import { useSnackbar } from './SnackbarProvider';
 import { ExcelData } from '../../electron/util';
-
 
 const ModernTab = styled(Tab) (({ theme }) => ({
     textTransform: 'none',
@@ -45,7 +45,7 @@ const ModernTabList = styled(TabList, {
     shouldForwardProp: (prop) => 
         !['fullWidth', 'textColor', 'selectionFollowsFocus'].includes(prop.toString())
 }) (({ theme }) => ({
-    borderBottom: `1px solid ${theme.palette.divider}`,
+    // borderBottom: `1px solid ${theme.palette.divider}`,
 
     '& .MuiTabs-indicator': {
         background: theme.palette.primary.main,
@@ -82,6 +82,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     const selectedSheet = sheetNames[parseInt(tabValue)] || '';
     const [manualEntry, setManualEntry] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const containsTabs = Object.keys(shifts).length !== 0
 
     const handleDeleteShift = (shiftToDelete: ExcelData, sheetName: string) => {
         window.electron.invoke('delete-from-file', shiftToDelete, sheetName)
@@ -179,19 +180,36 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     return (
         <Box width={'100%'} height={'100%'} display={'flex'} flexDirection={'column'}>
             <TabContext value={tabValue}>
-                <Box>
-                    <ModernTabList onChange={handleTabChange} scrollButtons="auto" variant='scrollable'>
-                        {sheetNames.map((sheet, index) => (
-                            <ModernTab key={index} label={sheet} value={`${index}`}></ModernTab>
-                        ))}
-                        <Box alignContent={'center'}>
+                {!containsTabs ? (
+                    <Box>
+                        <Button 
+                            color='primary' 
+                            onClick={() => handleOpenModal()}
+                            sx={{ display: 'flex', alignItems: 'center', gap:1, textTransform: 'None', height: '3rem'}}
+                        >
+                            <AddIcon/>
+                            <Typography variant='body1'>New Tab</Typography>
+                        </Button>
+                    </Box>
+                ):(
+                    <Box display={'flex'} mr={1} justifyContent={'space-between'}>
+                        <ModernTabList onChange={handleTabChange} scrollButtons="auto" variant='scrollable'>
+                            {sheetNames.map((sheet, index) => (
+                                <ModernTab key={index} label={sheet} value={`${index}`}></ModernTab>
+                            ))}
+                        </ModernTabList>
+                        <Box display={'flex'} justifyContent={'center'}>
                             <IconButton color='primary' onClick={() => handleOpenModal()}>
                                 <AddIcon/>
                             </IconButton>
+
+                            <IconButton color='secondary'>
+                                <EditIcon/>
+                            </IconButton>
                         </Box>
-                        
-                    </ModernTabList>
-                </Box>
+                    </Box>
+                )}
+                
                 
                 <ModernTabPanel value={`${tabValue}`} aria-selected>
                     <Box
@@ -200,6 +218,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                             display:'flex',
                             flexDirection: 'column',
                             overflow:'auto',
+                            borderTop: '0.2px solid lightgray'
                         }}
                     >
                         <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
