@@ -30,6 +30,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
     const [hasUpdates, setHasUpdates] = useState<boolean>(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [sheetSelected, setSheetSelected] = useState<string | null>(null);
+    const isContinueDisabled = Object.values(shifts).some(sheet => sheet.length === 0)
 
     const getShifts = () => {
         window.electron.invoke('read-excel-file')
@@ -175,7 +176,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal} sx={{color: 'white', fontWeight: 'bold'}}>
                     Add Shift
                 </Button>
-                <Button variant="contained" color='secondary' onClick={onNavigateToCalander} sx={{color: 'white', fontWeight: 'bold'}}>
+                <Button variant="contained" color='secondary' onClick={onNavigateToCalander} sx={{color: 'white', fontWeight: 'bold'}} disabled={isContinueDisabled}>
                     Continue
                 </Button>
             </Box>
