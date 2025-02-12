@@ -2,7 +2,7 @@ import https from 'https';
 import fs from 'fs';
 import path from'path';
 import unzipper from 'unzipper';
-import { Builder, By, until } from 'selenium-webdriver';
+import { Builder, By, until, WebElement } from 'selenium-webdriver';
 import { Options, ServiceBuilder } from 'selenium-webdriver/chrome.js';
 import { app, ipcMain } from 'electron';
 import { exec } from 'child_process';
@@ -240,8 +240,8 @@ async function formatTime(time: string): Promise<string> {
  * @param endDate end date of when the schedule ends
  * @returns an array filled with the shifts spanning between the given start and end date
  */
-async function generateSchedule(shifts: ExcelData[], startDate: string, endDate: string){
-    const schedule: { date: string; startTime: string; endTime: string }[] = [];
+async function generateSchedule(data: Record<string, ExcelData[]>, startDate: string, endDate: string){
+    const schedule: { jobTitle: string, date: string; startTime: string; endTime: string }[] = [];
 
     //Sorting days for easier comparison with dayjs type
     const dayOfWeekMap = {
@@ -269,13 +269,18 @@ async function generateSchedule(shifts: ExcelData[], startDate: string, endDate:
         const currentDayOfWeek = currentDate.day()
         //Looping through the given shifts to see which match the current date that is set
         //It will add into an array once if finds a match
-        for(const shift of shifts){
-            if(dayOfWeekMap[shift.day as keyof typeof dayOfWeekMap] === currentDayOfWeek){
-                schedule.push({
-                    date: currentDate.format('YYYYMMDD'),
-                    startTime: await formatTime(shift.startTime),
-                    endTime: await formatTime(shift.endTime)
-                })
+        for(const sheetName in data) {
+            if(data.hasOwnProperty(sheetName) && Array.isArray(data[sheetName]) && data[sheetName].length > 0){
+                for(const shift of data[sheetName]){
+                    if(dayOfWeekMap[shift.day as keyof typeof dayOfWeekMap] === currentDayOfWeek){
+                        schedule.push({
+                            jobTitle: sheetName,
+                            date: currentDate.format('YYYYMMDD'),
+                            startTime: await formatTime(shift.startTime),
+                            endTime: await formatTime(shift.endTime)
+                        })
+                    }
+                }
             }
         }
         
@@ -294,7 +299,7 @@ async function generateSchedule(shifts: ExcelData[], startDate: string, endDate:
  * @param endDate end date of when the shifts end
  * @returns 
  */
-async function runSeleniumScript(window: any, data: ExcelData[], startDate: string, endDate: string): Promise<void> {
+async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>, startDate: string, endDate: string): Promise<void> {
     await runScriptConfirmation(window)
 
     sendProgressUpdates(window, 'Checking for chromedriver...', false)
@@ -321,7 +326,7 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
         .build();
         
     //Array to store any shifts skipped due to an error
-    const shiftsSkipped: { date: string; startTime: string; endTime: string }[] = [];
+    const shiftsSkipped: { jobTitle: string, date: string; startTime: string; endTime: string }[] = [];
 
     try{
         //Launch driver and open the link
@@ -344,6 +349,36 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
                 break
             }
 
+            await driver.wait(until.elementsLocated(By.css(".well.table-responsive")), 1000);
+
+            const jobContainers: WebElement[] = await driver.findElements(By.css(".well.table-responsive"));
+
+            let jobTitleFound = false;
+            //Loop through job containers to find job title
+            for (const container of jobContainers){
+                const headingElement = await container.findElement(By.css("h4.sectionHeading"));
+                const headingText = await headingElement.getText();
+
+                //When job title found, hit add button
+                if(headingText.includes(currentShift.jobTitle)) {
+                    const addTimeButton = await container.findElement(By.css("a#addTime"));
+                    await driver.wait(until.elementIsVisible(addTimeButton), 500);
+                    await addTimeButton.click();
+                    jobTitleFound = true;
+                    break;
+                }
+            }
+
+            //If job title was not found add that to shift's being skipped
+            if(!jobTitleFound){
+                shiftsSkipped.push({
+                    jobTitle: currentShift.jobTitle,
+                    date: currentShift.date,
+                    startTime: currentShift.startTime,
+                    endTime: currentShift.endTime
+                })
+                break;
+            }
             //Find addTime element and click on it once found
             const addTimeButton = await driver.findElement(elementToWaitFor)
             addTimeButton.click()
@@ -393,6 +428,7 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
             //When clicking save, if error pops up, add into shifts being skipped
             if(await elementExists(driver, By.id("errorMessageHolder"))) {
                 shiftsSkipped.push({
+                    jobTitle: currentShift.jobTitle,
                     date: currentShift.date,
                     startTime: currentShift.startTime,
                     endTime: currentShift.endTime
