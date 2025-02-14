@@ -83,7 +83,7 @@ const createWindow = () => {
   const menuTemplate = process.platform === 'darwin' ? macMenu : []
 
   const appMenu = Menu.buildFromTemplate(menuTemplate);
-  Menu.setApplicationMenu(appMenu)
+  // Menu.setApplicationMenu(appMenu)
 
   //Check if on development mode
   if(isDev()) {

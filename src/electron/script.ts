@@ -1,11 +1,12 @@
 import https from 'https';
 import fs from 'fs';
 import path from'path';
+import os from 'os';
 import unzipper from 'unzipper';
 import { Builder, By, until, WebElement } from 'selenium-webdriver';
 import { Options, ServiceBuilder } from 'selenium-webdriver/chrome.js';
 import { app, ipcMain } from 'electron';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { BrowserWindow } from 'electron'
 import { ExcelData } from './util.js';
 import dayjs from 'dayjs';
@@ -18,7 +19,7 @@ interface ShiftFormat {
 }
 
 
-const driverDir = path.resolve(app.getPath('userData'), `chrome-driver`); //Driver path
+const driverDir = path.join(os.homedir(), 'AutoShift', 'chrome-driver'); //Driver path
 const platform = await getPlatform(); //Type of platform
 //Chrome Driver Path for Mac and Windows dynamically adjusted
 const chromedriverPath = path.join(driverDir, `chromedriver-${platform}/${platform === 'win32'? '/chromedriver.exe' : '/chromedriver'}`);
@@ -51,12 +52,14 @@ function waitForConfirmation(window: BrowserWindow, shift: ShiftFormat): Promise
 }
 
 function runScriptConfirmation(window: BrowserWindow): Promise<boolean> {
+    console.log('Waiting for confirmation...')
     return new Promise((resolve) => {
         window.webContents.send('confirm-run-script')
 
         ipcMain.once('confirm-run-script', (_event, response: {confirmed: boolean}) => {
             resolve(response.confirmed)
         })
+        console.log('confirmed')
     })
 }
 
@@ -90,8 +93,6 @@ async function getCurrentChromeVersion(): Promise<string> {
             command = 'reg query "HKEY_CURRENT_USER\\Software\\Google\\Chrome\\BLBeacon" /v version'
         } else if(platform.startsWith("mac")) {
             command = '/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --version'
-        } else if(platform === "linux") {
-            command = 'google-chrome --version || google-chrome-stable --version'
         } else {
             reject(new Error("Unsupported platform"));
             return;
@@ -139,29 +140,29 @@ async function downloadChromedriver(version: string): Promise<void> {
     const chromedriverURL = `https://storage.googleapis.com/chrome-for-testing-public/${version}/${platformFile}/chromedriver-${platformFile}.zip`
     const zipPath = path.join(driverDir, "chromedriver.zip");
 
+    console.log('Starting to download chrome version')
     return new Promise((resolve, reject) => {
+        if(fs.existsSync(driverDir)){
+            console.log('Deleting previous ChromeDriver...')
+            fs.rmSync(driverDir, { recursive: true, force: true })
+        }
+
+        //Check download was successful 
+        if(!fs.existsSync(driverDir)) {
+            fs.mkdirSync(driverDir, { recursive: true })
+        }
+
+        const file = fs.createWriteStream(zipPath)
+        
         //Fetching the chromedriver
         https.get(chromedriverURL, async (response: any) => {
             //If the driver wasn't found, attempt fallback version
             if(response.statusCode !== 200) {
-                const fallbackVersion = await adjustVersion(version);
-                const fallbackURL = `https://storage.googleapis.com/chrome-for-testing-public/${fallbackVersion}/${platformFile}/chromedriver-${platformFile}.zip`
-                https.get(fallbackURL, (fallbackResponse: any) => {
-                    //Return error if fallback didn't work as well
-                    if(fallbackResponse.statusCode !== 200){
-                        reject(new Error(`Failed to download chromedriver. HTTP Status: ${fallbackResponse.statusCode}`));
-                        return;
-                    }
-                })
+                reject(new Error(`Failed to download chromedriver. HTTP Status: ${response.statusCode}`));
+                return;
             }
 
-            //Check download was successful 
-            if(!fs.existsSync(driverDir)) {
-                fs.mkdirSync(driverDir, { recursive: true })
-            }
-
-            const file = fs.createWriteStream(zipPath);
-            response.pipe(file);
+            response.pipe(file)
 
             file.on('finish', async () => {
                 file.close();
@@ -174,15 +175,18 @@ async function downloadChromedriver(version: string): Promise<void> {
                         .promise()
                     fs.unlinkSync(zipPath);
 
-                    //Set executable permissions for chromedriver
-                    fs.chmodSync(chromedriverPath, 0o755);
-
+                    if(fs.existsSync(chromedriverPath)){
+                        //Set executable permissions for chromedriver
+                        fs.chmodSync(chromedriverPath, 0o755);
+                    }
+                    
                     resolve();
                 } catch (error) {
                     reject(new Error(`Failed to extract Chromedriver: ${error}`))
                 }
             });
         }).on('error', (error: any) => {
+            console.log(error)
             reject(new Error(`Failed to download Chromedriver: ${error}`))
         });
     });
@@ -195,13 +199,42 @@ async function downloadChromedriver(version: string): Promise<void> {
  */
 async function ensureChromedriverExists(window: BrowserWindow): Promise<void> {
     if(fs.existsSync(chromedriverPath)) {
-        sendProgressUpdates(window, "Chromedriver already exists.", false)
-    } else {
-        sendProgressUpdates(window, "Chromedriver not found. Fetching the latest version...", false);
-        const driverVersion = await getCurrentChromeVersion();
-        sendProgressUpdates(window, `Latest Chromedriver version: ${driverVersion}`, false);
-        await downloadChromedriver(driverVersion);
-        sendProgressUpdates(window, 'Chromedriver downloaded successfully', false);
+        const driverVersion = await getInstalledChromeDriverVersion();
+        const chromeVersion = await getCurrentChromeVersion();
+
+        if(driverVersion === chromeVersion){
+            sendProgressUpdates(window, "Chromedriver already exists.", false)
+            return;
+        } else {
+            sendProgressUpdates(window, "Chromedriver version mismatch! Updating to compatible version", false)
+        }
+    } 
+
+    const latestVersion = await getCurrentChromeVersion();
+    sendProgressUpdates(window, `Latest Chromedriver version: ${latestVersion}`, false);
+    await downloadChromedriver(latestVersion);
+    sendProgressUpdates(window, 'Chromedriver downloaded successfully', false);
+}
+
+async function getInstalledChromeDriverVersion(): Promise<string | null> {
+    try{
+        let chromedriverExecutable = chromedriverPath;
+
+        if(platform === 'win32'){
+            chromedriverExecutable = path.join(chromedriverPath, "chromedriver.exe")
+        }
+
+        const command = `${chromedriverExecutable} --version`;
+
+        //Using correct shell for the OS
+        const shell = platform === "win32" ? "cmd.exe" : "/bin/bash"
+
+        const output = execSync(command, { shell }).toString()
+        const match = output.match(/ChromeDriver (\d+\.\d+.\d+\.\d+)/);
+        return match ? match[1] : null;
+    } catch (error: any){
+        console.error('Error while getting installed chromedriver version',error);
+        return null
     }
 }
 
@@ -300,7 +333,10 @@ async function generateSchedule(data: Record<string, ExcelData[]>, startDate: st
  * @returns 
  */
 async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>, startDate: string, endDate: string): Promise<void> {
-    await runScriptConfirmation(window)
+
+    if(await runScriptConfirmation(window)){
+        console.log('Confirmed')
+    }
 
     sendProgressUpdates(window, 'Checking for chromedriver...', false)
 
