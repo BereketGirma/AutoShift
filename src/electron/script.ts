@@ -334,9 +334,7 @@ async function generateSchedule(data: Record<string, ExcelData[]>, startDate: st
  */
 async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>, startDate: string, endDate: string): Promise<void> {
 
-    if(await runScriptConfirmation(window)){
-        console.log('Confirmed')
-    }
+    await runScriptConfirmation(window)
 
     sendProgressUpdates(window, 'Checking for chromedriver...', false)
 
@@ -415,9 +413,6 @@ async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>,
                 })
                 break;
             }
-            //Find addTime element and click on it once found
-            const addTimeButton = await driver.findElement(elementToWaitFor)
-            addTimeButton.click()
 
             //Select the shift start date. Will wait 1second until element is loaded in
             const startDateSelector = await driver.wait(until.elementLocated(By.id("date")), 1000);
