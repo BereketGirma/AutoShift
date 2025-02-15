@@ -112,7 +112,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         try {
             console.log("Running Selenium script...")
             if (mainWindow) {
-            // await runSeleniumScript(mainWindow, await excelOps.readExcelFile(), startDate, endDate);
+                await runSeleniumScript(mainWindow, await excelOps.readExcelFile(), startDate, endDate);
             } else {
             throw new Error('Main window is not initialized');
             }
