@@ -14,7 +14,8 @@ import {
     Typography,
     Button,
     TextField,
-    CircularProgress
+    CircularProgress,
+    InputLabel
 } from '@mui/material';
 import {  TabList, TabPanel, TabContext } from '@mui/lab'
 import { styled } from '@mui/system'
@@ -77,6 +78,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     const { enqueueSnackbar } = useSnackbar();
     const [tabValue, setTabValue] = useState('0');
     const [tabModalOpen, setTabModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
     const [newTabTitle, setNewTabTitle] = useState('');
     const sheetNames = Object.keys(shifts)
     const selectedSheet = sheetNames[parseInt(tabValue)] || '';
@@ -171,6 +173,11 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
         }
     }
 
+    const handleSaveEdits = async () => {
+        setEditModalOpen(false)
+        console.log('Saving edits!')
+    }
+
     useEffect(() => {
         if(onSheetSelected){
             onSheetSelected(selectedSheet)
@@ -203,7 +210,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                                 <AddIcon/>
                             </IconButton>
 
-                            <IconButton color='secondary'>
+                            <IconButton color='secondary' onClick={() => setEditModalOpen(true)}>
                                 <EditIcon/>
                             </IconButton>
                         </Box>
@@ -343,6 +350,61 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
             </Modal>
         )}
 
+        {editModalOpen && (
+            <Modal open={editModalOpen}>
+                <Box sx={{
+                    display:'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    bgcolor: 'background.paper',
+                    borderRadius: '5px',
+                    boxShadow: 24,
+                    p: 2,
+                    width: '60%',
+                    textAlign: 'center',
+                    maxWidth: '400px',
+                    gap: 2
+                }}>
+
+                    {/* Modal title */}
+                    <Typography variant='h6' component = 'h2' color='black'>
+                        Edit Tabs
+                    </Typography>
+
+                    <Box display={"flex"} flexDirection={"column"} gap={2}>
+                    {sheetNames.map((sheet, index) => (
+                        <Box display={"flex"} gap={2} width={"100%"}>
+                            <TextField hiddenLabel key={index} defaultValue={sheet}></TextField>
+                            <Tooltip title="Delete">
+                                <IconButton
+                                    color = "error"
+                                    className='no-outline'
+                                >
+                                    <DeleteIcon/>
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+
+                    ))}
+                    </Box>
+
+                    <Box display={"flex"} gap={2}>
+                        <Button variant='contained' color='error' onClick={() => setEditModalOpen(false)}>
+                            Cancel
+                        </Button>
+
+                        <Button variant='contained' color='primary' onClick={handleSaveEdits}>
+                            Save
+                        </Button>
+                    </Box>
+                    
+                </Box>
+            </Modal>
+        )}
         </Box>
     );
 }
