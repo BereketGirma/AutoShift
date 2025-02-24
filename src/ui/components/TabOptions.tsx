@@ -15,13 +15,12 @@ import {
     Button,
     TextField,
     CircularProgress,
-    InputLabel
 } from '@mui/material';
 import {  TabList, TabPanel, TabContext } from '@mui/lab'
 import { styled } from '@mui/system'
 import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit'
 import AddIcon from '@mui/icons-material/AddCircle'
+import CloseIcon from '@mui/icons-material/Close'
 import { useSnackbar } from './SnackbarProvider';
 import { ExcelData } from '../../electron/util';
 
@@ -32,9 +31,11 @@ const ModernTab = styled(Tab) (({ theme }) => ({
     marginRight: theme.spacing(1),
     borderRadius: '8px 8px 0 0',
     transition: 'all 0.3s ease',
+    minWidth: 'auto',
+    padding: theme.spacing(1,2),
     '&.Mui-selected': {
         background: theme.palette.primary.light,
-        // borderBottom: '6px solid' + theme.palette.primary.main,
+        paddingRight: theme.spacing(2),
     },
 
     '&:hover': {
@@ -46,7 +47,6 @@ const ModernTabList = styled(TabList, {
     shouldForwardProp: (prop) => 
         !['fullWidth', 'textColor', 'selectionFollowsFocus'].includes(prop.toString())
 }) (({ theme }) => ({
-    // borderBottom: `1px solid ${theme.palette.divider}`,
 
     '& .MuiTabs-indicator': {
         background: theme.palette.primary.main,
@@ -78,7 +78,6 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     const { enqueueSnackbar } = useSnackbar();
     const [tabValue, setTabValue] = useState('0');
     const [tabModalOpen, setTabModalOpen] = useState(false);
-    const [editModalOpen, setEditModalOpen] = useState(false);
     const [newTabTitle, setNewTabTitle] = useState('');
     const sheetNames = Object.keys(shifts)
     const selectedSheet = sheetNames[parseInt(tabValue)] || '';
@@ -117,7 +116,6 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     }
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
-        console.log('Tab index', newValue)
         setTabValue(newValue);
     };
 
@@ -150,7 +148,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
         try{
             setIsLoading(true)
             const jobTitles = await window.electron.invoke('collect-job-titles')
-            console.log(jobTitles)
+
             if(jobTitles.success){
                 for (const job of jobTitles.list) {
                     await window.electron.invoke('create-new-sheet', job);
@@ -173,9 +171,19 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
         }
     }
 
-    const handleSaveEdits = async () => {
-        setEditModalOpen(false)
-        console.log('Saving edits!')
+    const handleDeleteTab = async () => {
+        try{
+            await window.electron.invoke('remove-job-title', selectedSheet)
+            getShifts()
+
+            enqueueSnackbar(`${selectedSheet} has been deleted!`, 'success')
+            setTabValue((sheetNames.length).toString())
+            handleCloseModal();
+        } catch (error) {
+            console.error('Error occured: ', error)
+            enqueueSnackbar(`Failed to add ${newTabTitle} tab!`, 'error')
+
+        }
     }
 
     useEffect(() => {
@@ -202,16 +210,21 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                     <Box display={'flex'} mr={1} justifyContent={'space-between'}>
                         <ModernTabList onChange={handleTabChange} scrollButtons="auto" variant='scrollable'>
                             {sheetNames.map((sheet, index) => (
-                                <ModernTab key={index} label={sheet} value={`${index}`}></ModernTab>
+                                <ModernTab key={index} value={`${index}`} label={
+                                    <Box display={'flex'} alignItems={'center'} gap={2}>
+                                        {sheet}
+                                        {tabValue === `${index}` && (
+                                            <IconButton size="small" onClick={handleDeleteTab}>
+                                                <CloseIcon fontSize='small'/>
+                                            </IconButton>
+                                        )}
+                                    </Box>
+                                }></ModernTab>
                             ))}
                         </ModernTabList>
                         <Box display={'flex'} justifyContent={'center'}>
                             <IconButton color='primary' onClick={() => handleOpenModal()}>
                                 <AddIcon/>
-                            </IconButton>
-
-                            <IconButton color='secondary' onClick={() => setEditModalOpen(true)}>
-                                <EditIcon/>
                             </IconButton>
                         </Box>
                     </Box>
@@ -350,61 +363,6 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
             </Modal>
         )}
 
-        {editModalOpen && (
-            <Modal open={editModalOpen}>
-                <Box sx={{
-                    display:'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    bgcolor: 'background.paper',
-                    borderRadius: '5px',
-                    boxShadow: 24,
-                    p: 2,
-                    width: '60%',
-                    textAlign: 'center',
-                    maxWidth: '400px',
-                    gap: 2
-                }}>
-
-                    {/* Modal title */}
-                    <Typography variant='h6' component = 'h2' color='black'>
-                        Edit Tabs
-                    </Typography>
-
-                    <Box display={"flex"} flexDirection={"column"} gap={2}>
-                    {sheetNames.map((sheet, index) => (
-                        <Box display={"flex"} gap={2} width={"100%"}>
-                            <TextField hiddenLabel key={index} defaultValue={sheet}></TextField>
-                            <Tooltip title="Delete">
-                                <IconButton
-                                    color = "error"
-                                    className='no-outline'
-                                >
-                                    <DeleteIcon/>
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
-
-                    ))}
-                    </Box>
-
-                    <Box display={"flex"} gap={2}>
-                        <Button variant='contained' color='error' onClick={() => setEditModalOpen(false)}>
-                            Cancel
-                        </Button>
-
-                        <Button variant='contained' color='primary' onClick={handleSaveEdits}>
-                            Save
-                        </Button>
-                    </Box>
-                    
-                </Box>
-            </Modal>
-        )}
         </Box>
     );
 }
