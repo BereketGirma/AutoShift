@@ -211,7 +211,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                         </Button>
                     </Box>
                 ):(
-                    <Box display={'flex'} mr={1} justifyContent={'space-between'}>
+                    <Box display={'flex'} mr={1}>
                         <ModernTabList onChange={handleTabChange} scrollButtons="auto" variant='scrollable'>
                             {sheetNames.map((sheet, index) => (
                                 <ModernTab key={index} value={`${index}`} label={
@@ -229,9 +229,11 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                             ))}
                         </ModernTabList>
                         <Box display={'flex'} justifyContent={'center'}>
-                            <IconButton color='primary' onClick={() => handleOpenModal()}>
-                                <AddIcon/>
-                            </IconButton>
+                            <Tooltip title="Add Tab">
+                                <IconButton color='primary' onClick={() => handleOpenModal()}>
+                                    <AddIcon/>
+                                </IconButton>
+                            </Tooltip>
                         </Box>
                     </Box>
                 )}
