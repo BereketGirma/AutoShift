@@ -35,8 +35,8 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
         return !Object.values(shifts).some(sheet => sheet.length > 0)
     }, [shifts])
 
-    const getShifts = () => {
-        window.electron.invoke('read-excel-file')
+    const getShifts = async() => {
+        await window.electron.invoke('read-excel-file')
             .then((response: { success: boolean, data: Record<string, ExcelData[]> }) => {
                 if(response.data && typeof response.data === 'object'){
                     setShift(response.data);

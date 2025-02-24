@@ -70,7 +70,7 @@ const ModernTabPanel = styled(TabPanel) (({ theme }) => ({
 
 interface ModernTabsProps {
     shifts: Record<string, ExcelData[]>;
-    getShifts: () => void;
+    getShifts: () => Promise<void>;
     onSheetSelected?: (sheet: string) => void;
 }
 
@@ -110,6 +110,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
         setIsLoading(false)
         setManualEntry(false)
         setTabModalOpen(false);
+        setNewTabTitle("")
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,7 +134,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
             }
             
             await window.electron.invoke('create-new-sheet', newTabTitle)
-            getShifts()
+            await getShifts()
 
             enqueueSnackbar(`${newTabTitle} has been created!`, 'success')
             setTabValue((sheetNames.length).toString())
@@ -157,7 +158,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
 
                 enqueueSnackbar(`Successfully retrieved job titles`, 'success')
                 handleCloseModal();
-                getShifts()
+                await getShifts()
 
                 return
             } else {
@@ -176,10 +177,10 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     const handleDeleteTab = async () => {
         try{
             await window.electron.invoke('remove-job-title', selectedSheet)
-            getShifts()
+            await getShifts()
 
             enqueueSnackbar(`${selectedSheet} has been deleted!`, 'success')
-            setTabValue((sheetNames.length).toString())
+            setTabValue("0")
             handleCloseModal();
             setShowWarning(false);
         } catch (error) {
@@ -193,7 +194,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
         if(onSheetSelected){
             onSheetSelected(selectedSheet)
         }
-    }, [shifts, selectedSheet, tabValue, sheetNames, onSheetSelected, getShifts])
+    }, [onSheetSelected, selectedSheet])
 
     return (
         <Box width={'100%'} height={'100%'} display={'flex'} flexDirection={'column'}>
@@ -390,9 +391,12 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
             }}
         >
             <Box>
-                <Typography color='black' variant='h5'>Removing Tab</Typography>
+                <Typography color='black' variant='h5'>Removing Tab - "{selectedSheet}"</Typography>
 
-                <Typography color='gray'>This will get rid of any shifts save under this tab. Please proceed if you agree to these terms.</Typography>            
+                <Typography color='error'>
+                    WARNING!! This action will get rid of any shifts saved under this tab. 
+                    Please proceed if you agree to these terms.
+                </Typography>            
             </Box>
 
             <Box display={'flex'} gap={2}>
