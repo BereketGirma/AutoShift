@@ -131,7 +131,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     })
 
     //Redirects to GitHub releases page for download
-    ipc.handle('open-external', async (_event, url: string) => {
+    ipc.handle('open-external-link', async (_event, url: string) => {
         await shell.openExternal(url)
     })
 

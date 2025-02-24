@@ -96,7 +96,7 @@ export interface EventPayloadMapping {
         }
     },
 
-    'open-external': {
+    'open-external-link': {
         request: { url: string },
         response: void
     },
@@ -136,7 +136,7 @@ export interface EventPayloadMapping {
             success:boolean,
             error?: string
         }
-    }
+    },
     //Add more events here
 }
 
