@@ -52,14 +52,12 @@ function waitForConfirmation(window: BrowserWindow, shift: ShiftFormat): Promise
 }
 
 function runScriptConfirmation(window: BrowserWindow): Promise<boolean> {
-    console.log('Waiting for confirmation...')
     return new Promise((resolve) => {
         window.webContents.send('confirm-run-script')
 
         ipcMain.once('confirm-run-script', (_event, response: {confirmed: boolean}) => {
             resolve(response.confirmed)
         })
-        console.log('confirmed')
     })
 }
 
@@ -140,10 +138,8 @@ async function downloadChromedriver(version: string): Promise<void> {
     const chromedriverURL = `https://storage.googleapis.com/chrome-for-testing-public/${version}/${platformFile}/chromedriver-${platformFile}.zip`
     const zipPath = path.join(driverDir, "chromedriver.zip");
 
-    console.log('Starting to download chrome version')
     return new Promise((resolve, reject) => {
         if(fs.existsSync(driverDir)){
-            console.log('Deleting previous ChromeDriver...')
             fs.rmSync(driverDir, { recursive: true, force: true })
         }
 
@@ -186,7 +182,7 @@ async function downloadChromedriver(version: string): Promise<void> {
                 }
             });
         }).on('error', (error: any) => {
-            console.log(error)
+            console.error(error)
             reject(new Error(`Failed to download Chromedriver: ${error}`))
         });
     });
@@ -292,7 +288,7 @@ async function generateSchedule(data: Record<string, ExcelData[]>, startDate: st
     const end = dayjs(endDate)
 
     if(!start.isValid() || !end.isValid()){
-        console.log('something aint right')
+        return []
     }
 
     //Looping through the given window of start and end date
@@ -495,11 +491,10 @@ async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>,
         return
 
     } catch(error){
-        console.log(error)
+        console.error(error)
         sendProgressUpdates(window, "Error occured while adding shifts.", true)
     } finally {
         //Quit driver after process is done
-        console.log(shiftsSkipped)
         await driver.quit();
     }
 }
@@ -550,13 +545,11 @@ async function collectJobTitles(window: any): Promise<string[]> {
         await driverWindow.minimize()
         
         const jobTitles = await driver.findElements(By.css('.well.table-responsive'))
-        console.log(jobTitles)
 
         for(let job of jobTitles){
             let heading = await job.findElement(By.css('.sectionHeading'))
             let text = await heading.getText()
             titlesList.push(text)
-            console.log(text)
         }
 
         await driver.sleep(500)
@@ -564,13 +557,12 @@ async function collectJobTitles(window: any): Promise<string[]> {
         return titlesList
 
     } catch(error){
-        console.log(error)
+        console.error(error)
     } finally {
         //Quit driver after process is done
         await driver.quit();
     }
 
-    console.log("Title list:", titlesList)
     return titlesList
 }
 

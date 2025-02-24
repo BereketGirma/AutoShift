@@ -86,7 +86,6 @@ export class ExcelOperations {
                     }
                 }
             })
-            console.log("Reading file",sheetDataDict)
 
             return sheetDataDict
 
@@ -299,9 +298,7 @@ export class ExcelOperations {
 
             //Save changes
             XLSX.writeFile(this.workbook, this.filePath);
-            console.log(`Sheet "${sheetName}" deleted successfully`)
         } catch (error: any){
-            console.log('Error while deleting sheet:',error)
             this.logError('delete sheet', error.message);
         }
     }

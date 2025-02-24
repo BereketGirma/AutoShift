@@ -23,7 +23,6 @@ function CalenderContent({onNavigateToMain, onNavigateToLoading}: CalanderConten
         setSelectedStartDate(newDate)
 
         if(newDate && selectedEndDate && newDate.isAfter(selectedEndDate)){
-            console.log('working')
             setSelectedEndDate(newDate)            
         }
     }

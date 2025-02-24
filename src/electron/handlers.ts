@@ -36,11 +36,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     })
 
     ipc.handle('start-download', async () => {
-        console.log('Attempting to start download')
         try{
             //Initiates app update download
             await autoUpdater.downloadUpdate()
-            console.log('Download started successfully.')
             return { succcess: true, message: 'Downloading update' }
         } catch (error: any) {
             console.error('Error starting download:', error)
@@ -110,7 +108,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     //Handles running selenium script
     ipc.handle('run-script', async (_event, startDate: string, endDate: string) => {
         try {
-            console.log("Running Selenium script...")
             if (mainWindow) {
                 await runSeleniumScript(mainWindow, await excelOps.readExcelFile(), startDate, endDate);
             } else {
