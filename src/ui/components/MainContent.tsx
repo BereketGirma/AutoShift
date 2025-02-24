@@ -1,5 +1,5 @@
 import '../styles/MainContent.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { 
     Typography, 
     Button,
@@ -30,12 +30,14 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
     const [hasUpdates, setHasUpdates] = useState<boolean>(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [sheetSelected, setSheetSelected] = useState<string | null>(null);
-    const isContinueDisabled = Object.values(shifts).some(sheet => sheet.length === 0)
+
+    const sheetHasData = useMemo(() => {
+        return !Object.values(shifts).some(sheet => sheet.length > 0)
+    }, [shifts])
 
     const getShifts = () => {
         window.electron.invoke('read-excel-file')
             .then((response: { success: boolean, data: Record<string, ExcelData[]> }) => {
-                console.log(response.data)
                 if(response.data && typeof response.data === 'object'){
                     setShift(response.data);
                 } else {
@@ -56,7 +58,6 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
     };
 
     const handleSaveShift = (data: ExcelData) => {
-        console.log('Writing into sheet:',sheetSelected)
         window.electron.invoke('write-into-file', sheetSelected, [data])
             .then((response: { success: boolean; error?: string }) => {
                 if(response.success) {
@@ -86,7 +87,6 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
     };
 
     const handleSheetSelected = (sheet: string) => {
-        console.log('selected sheet:',sheet)
         setSheetSelected(sheet)
     }
 
@@ -110,7 +110,6 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
             sx={{
                 background:'white',
             }}
-            // justifyContent={'space-between'}
         >
             <Box
                 display='flex'
@@ -176,7 +175,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal} sx={{color: 'white', fontWeight: 'bold'}}>
                     Add Shift
                 </Button>
-                <Button variant="contained" color='secondary' onClick={onNavigateToCalander} sx={{color: 'white', fontWeight: 'bold'}} disabled={isContinueDisabled}>
+                <Button variant="contained" color='secondary' onClick={onNavigateToCalander} sx={{color: 'white', fontWeight: 'bold'}} disabled={sheetHasData}>
                     Continue
                 </Button>
             </Box>
