@@ -84,6 +84,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     const [manualEntry, setManualEntry] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const containsTabs = Object.keys(shifts).length !== 0
+    const [showWarning, setShowWarning] = useState(false);
 
     const handleDeleteShift = (shiftToDelete: ExcelData, sheetName: string) => {
         window.electron.invoke('delete-from-file', shiftToDelete, sheetName)
@@ -171,6 +172,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
         }
     }
 
+
     const handleDeleteTab = async () => {
         try{
             await window.electron.invoke('remove-job-title', selectedSheet)
@@ -179,6 +181,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
             enqueueSnackbar(`${selectedSheet} has been deleted!`, 'success')
             setTabValue((sheetNames.length).toString())
             handleCloseModal();
+            setShowWarning(false);
         } catch (error) {
             console.error('Error occured: ', error)
             enqueueSnackbar(`Failed to add ${newTabTitle} tab!`, 'error')
@@ -190,7 +193,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
         if(onSheetSelected){
             onSheetSelected(selectedSheet)
         }
-    }, [shifts, selectedSheet, onSheetSelected, getShifts])
+    }, [shifts, selectedSheet, tabValue, sheetNames, onSheetSelected, getShifts])
 
     return (
         <Box width={'100%'} height={'100%'} display={'flex'} flexDirection={'column'}>
@@ -214,9 +217,11 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                                     <Box display={'flex'} alignItems={'center'} gap={2}>
                                         {sheet}
                                         {tabValue === `${index}` && (
-                                            <IconButton size="small" onClick={handleDeleteTab}>
-                                                <CloseIcon fontSize='small'/>
-                                            </IconButton>
+                                            <Tooltip title="Remove Tab">
+                                                <IconButton component="span" size="small" onClick={() => setShowWarning(true)}>
+                                                    <CloseIcon fontSize='small'/>
+                                                </IconButton>
+                                            </Tooltip>
                                         )}
                                     </Box>
                                 }></ModernTab>
@@ -362,6 +367,46 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                 </Box>
             </Modal>
         )}
+
+        
+        <Modal open={showWarning}>
+            <Box 
+            sx={{
+                display:'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                bgcolor: 'background.paper',
+                borderRadius: '5px',
+                boxShadow: 24,
+                p: 2,
+                width: '80%',
+                textAlign: 'center',
+                maxWidth: '400px',
+                gap: 4
+            }}
+        >
+            <Box>
+                <Typography color='black' variant='h5'>Removing Tab</Typography>
+
+                <Typography color='gray'>This will get rid of any shifts save under this tab. Please proceed if you agree to these terms.</Typography>            
+            </Box>
+
+            <Box display={'flex'} gap={2}>
+                <Button variant='contained' color='error' onClick={() => setShowWarning(false)}>
+                    Cancel
+                </Button>
+                <Button variant='contained' onClick={handleDeleteTab}>
+                    Remove
+                </Button>
+            </Box>
+        </Box>
+
+        </Modal>
+            
 
         </Box>
     );
