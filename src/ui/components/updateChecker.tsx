@@ -17,12 +17,12 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
     
     const updateList = [
         {
-            version: '1.1 - Latest',
+            version: '1.1.0 - Latest',
             released: '2/24/2025',
-            url: 'some url'
+            url: 'https://github.com/BereketGirma/AutoShift/releases/tag/Latest'
         },
         {
-            version: '1.0 - Beta',
+            version: '1.0.0 - Beta',
             released: '1/25/2025',
             url: 'https://github.com/BereketGirma/AutoShift/releases/tag/AutoShift-v1.0-Beta'
         },
