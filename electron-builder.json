@@ -25,11 +25,11 @@
         "provider": "github",
         "owner": "BereketGirma",
         "repo": "AutoShift",
-        "releaseType": "latest"
+        "releaseType": "release"
     },
     "extraMetadata": {
         "releaseNotes": "This is the beta release of AutoShift. Please test and provide feedback.",
         "platform": "Windows, macOS",
-        "releaseType": "latest"
+        "releaseType": "release"
     }
 }
