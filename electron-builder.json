@@ -1,24 +1,22 @@
 {
     "appId": "com.bereket-girma.autoshift",
     "productName": "AutoShift",
-    "files": ["dist-electron", "dist-react", "build/icons"],
+    "files": ["dist-electron", "dist-react"],
     "extraResources": ["dist-electron/preload.cjs"],
     "mac": {
         "target": ["dmg", "zip"],
-        "icon": "build/icons/icon.icns",
+        "icon": "./src/ui/logo/mac/icon.icns",
         "category": "public.app-category.productivity"
     },
     "win": {
         "target": ["nsis"],
         "signAndEditExecutable": false,
-        "icon": "build/icons/icon.ico",
+        "icon": "./src/ui/logo/win/icon.ico",
         "artifactName": "${productName}-Setup-${version}.exe"
     },
     "nsis":{
         "oneClick": false,
         "allowToChangeInstallationDirectory": true,
-        "installerIcon": "build/icons/icon.ico",
-        "uninstallerIcon": "build/icons/icon.ico",
         "artifactName": "${productName}-Installer-${version}.exe"
     },
     "publish": {
