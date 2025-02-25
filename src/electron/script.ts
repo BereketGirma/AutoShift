@@ -216,10 +216,6 @@ async function getInstalledChromeDriverVersion(): Promise<string | null> {
     try{
         let chromedriverExecutable = chromedriverPath;
 
-        if(platform === 'win32'){
-            chromedriverExecutable = path.join(chromedriverPath, "chromedriver.exe")
-        }
-
         const command = `${chromedriverExecutable} --version`;
 
         //Using correct shell for the OS
