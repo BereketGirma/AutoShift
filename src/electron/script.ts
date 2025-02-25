@@ -1,11 +1,12 @@
 import https from 'https';
 import fs from 'fs';
 import path from'path';
+import os from 'os';
 import unzipper from 'unzipper';
-import { Builder, By, until } from 'selenium-webdriver';
+import { Builder, By, until, WebElement } from 'selenium-webdriver';
 import { Options, ServiceBuilder } from 'selenium-webdriver/chrome.js';
 import { app, ipcMain } from 'electron';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { BrowserWindow } from 'electron'
 import { ExcelData } from './util.js';
 import dayjs from 'dayjs';
@@ -18,7 +19,7 @@ interface ShiftFormat {
 }
 
 
-const driverDir = path.resolve(app.getPath('userData'), `chrome-driver`); //Driver path
+const driverDir = path.join(os.homedir(), 'AutoShift', 'chrome-driver'); //Driver path
 const platform = await getPlatform(); //Type of platform
 //Chrome Driver Path for Mac and Windows dynamically adjusted
 const chromedriverPath = path.join(driverDir, `chromedriver-${platform}/${platform === 'win32'? '/chromedriver.exe' : '/chromedriver'}`);
@@ -90,8 +91,6 @@ async function getCurrentChromeVersion(): Promise<string> {
             command = 'reg query "HKEY_CURRENT_USER\\Software\\Google\\Chrome\\BLBeacon" /v version'
         } else if(platform.startsWith("mac")) {
             command = '/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --version'
-        } else if(platform === "linux") {
-            command = 'google-chrome --version || google-chrome-stable --version'
         } else {
             reject(new Error("Unsupported platform"));
             return;
@@ -140,28 +139,26 @@ async function downloadChromedriver(version: string): Promise<void> {
     const zipPath = path.join(driverDir, "chromedriver.zip");
 
     return new Promise((resolve, reject) => {
+        if(fs.existsSync(driverDir)){
+            fs.rmSync(driverDir, { recursive: true, force: true })
+        }
+
+        //Check download was successful 
+        if(!fs.existsSync(driverDir)) {
+            fs.mkdirSync(driverDir, { recursive: true })
+        }
+
+        const file = fs.createWriteStream(zipPath)
+        
         //Fetching the chromedriver
         https.get(chromedriverURL, async (response: any) => {
             //If the driver wasn't found, attempt fallback version
             if(response.statusCode !== 200) {
-                const fallbackVersion = await adjustVersion(version);
-                const fallbackURL = `https://storage.googleapis.com/chrome-for-testing-public/${fallbackVersion}/${platformFile}/chromedriver-${platformFile}.zip`
-                https.get(fallbackURL, (fallbackResponse: any) => {
-                    //Return error if fallback didn't work as well
-                    if(fallbackResponse.statusCode !== 200){
-                        reject(new Error(`Failed to download chromedriver. HTTP Status: ${fallbackResponse.statusCode}`));
-                        return;
-                    }
-                })
+                reject(new Error(`Failed to download chromedriver. HTTP Status: ${response.statusCode}`));
+                return;
             }
 
-            //Check download was successful 
-            if(!fs.existsSync(driverDir)) {
-                fs.mkdirSync(driverDir, { recursive: true })
-            }
-
-            const file = fs.createWriteStream(zipPath);
-            response.pipe(file);
+            response.pipe(file)
 
             file.on('finish', async () => {
                 file.close();
@@ -174,15 +171,18 @@ async function downloadChromedriver(version: string): Promise<void> {
                         .promise()
                     fs.unlinkSync(zipPath);
 
-                    //Set executable permissions for chromedriver
-                    fs.chmodSync(chromedriverPath, 0o755);
-
+                    if(fs.existsSync(chromedriverPath)){
+                        //Set executable permissions for chromedriver
+                        fs.chmodSync(chromedriverPath, 0o755);
+                    }
+                    
                     resolve();
                 } catch (error) {
                     reject(new Error(`Failed to extract Chromedriver: ${error}`))
                 }
             });
         }).on('error', (error: any) => {
+            console.error(error)
             reject(new Error(`Failed to download Chromedriver: ${error}`))
         });
     });
@@ -195,13 +195,38 @@ async function downloadChromedriver(version: string): Promise<void> {
  */
 async function ensureChromedriverExists(window: BrowserWindow): Promise<void> {
     if(fs.existsSync(chromedriverPath)) {
-        sendProgressUpdates(window, "Chromedriver already exists.", false)
-    } else {
-        sendProgressUpdates(window, "Chromedriver not found. Fetching the latest version...", false);
-        const driverVersion = await getCurrentChromeVersion();
-        sendProgressUpdates(window, `Latest Chromedriver version: ${driverVersion}`, false);
-        await downloadChromedriver(driverVersion);
-        sendProgressUpdates(window, 'Chromedriver downloaded successfully', false);
+        const driverVersion = await getInstalledChromeDriverVersion();
+        const chromeVersion = await getCurrentChromeVersion();
+
+        if(driverVersion === chromeVersion){
+            sendProgressUpdates(window, "Chromedriver already exists.", false)
+            return;
+        } else {
+            sendProgressUpdates(window, "Chromedriver version mismatch! Updating to compatible version", false)
+        }
+    } 
+
+    const latestVersion = await getCurrentChromeVersion();
+    sendProgressUpdates(window, `Latest Chromedriver version: ${latestVersion}`, false);
+    await downloadChromedriver(latestVersion);
+    sendProgressUpdates(window, 'Chromedriver downloaded successfully', false);
+}
+
+async function getInstalledChromeDriverVersion(): Promise<string | null> {
+    try{
+        let chromedriverExecutable = chromedriverPath;
+
+        const command = `${chromedriverExecutable} --version`;
+
+        //Using correct shell for the OS
+        const shell = platform === "win32" ? "cmd.exe" : "/bin/bash"
+
+        const output = execSync(command, { shell }).toString()
+        const match = output.match(/ChromeDriver (\d+\.\d+.\d+\.\d+)/);
+        return match ? match[1] : null;
+    } catch (error: any){
+        console.error('Error while getting installed chromedriver version',error);
+        return null
     }
 }
 
@@ -240,8 +265,8 @@ async function formatTime(time: string): Promise<string> {
  * @param endDate end date of when the schedule ends
  * @returns an array filled with the shifts spanning between the given start and end date
  */
-async function generateSchedule(shifts: ExcelData[], startDate: string, endDate: string){
-    const schedule: { date: string; startTime: string; endTime: string }[] = [];
+async function generateSchedule(data: Record<string, ExcelData[]>, startDate: string, endDate: string){
+    const schedule: { jobTitle: string, date: string; startTime: string; endTime: string }[] = [];
 
     //Sorting days for easier comparison with dayjs type
     const dayOfWeekMap = {
@@ -259,7 +284,7 @@ async function generateSchedule(shifts: ExcelData[], startDate: string, endDate:
     const end = dayjs(endDate)
 
     if(!start.isValid() || !end.isValid()){
-        console.log('something aint right')
+        return []
     }
 
     //Looping through the given window of start and end date
@@ -269,13 +294,18 @@ async function generateSchedule(shifts: ExcelData[], startDate: string, endDate:
         const currentDayOfWeek = currentDate.day()
         //Looping through the given shifts to see which match the current date that is set
         //It will add into an array once if finds a match
-        for(const shift of shifts){
-            if(dayOfWeekMap[shift.day as keyof typeof dayOfWeekMap] === currentDayOfWeek){
-                schedule.push({
-                    date: currentDate.format('YYYYMMDD'),
-                    startTime: await formatTime(shift.startTime),
-                    endTime: await formatTime(shift.endTime)
-                })
+        for(const sheetName in data) {
+            if(data.hasOwnProperty(sheetName) && Array.isArray(data[sheetName]) && data[sheetName].length > 0){
+                for(const shift of data[sheetName]){
+                    if(dayOfWeekMap[shift.day as keyof typeof dayOfWeekMap] === currentDayOfWeek){
+                        schedule.push({
+                            jobTitle: sheetName,
+                            date: currentDate.format('YYYYMMDD'),
+                            startTime: await formatTime(shift.startTime),
+                            endTime: await formatTime(shift.endTime)
+                        })
+                    }
+                }
             }
         }
         
@@ -294,7 +324,8 @@ async function generateSchedule(shifts: ExcelData[], startDate: string, endDate:
  * @param endDate end date of when the shifts end
  * @returns 
  */
-async function runSeleniumScript(window: any, data: ExcelData[], startDate: string, endDate: string): Promise<void> {
+async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>, startDate: string, endDate: string): Promise<void> {
+
     await runScriptConfirmation(window)
 
     sendProgressUpdates(window, 'Checking for chromedriver...', false)
@@ -321,7 +352,7 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
         .build();
         
     //Array to store any shifts skipped due to an error
-    const shiftsSkipped: { date: string; startTime: string; endTime: string }[] = [];
+    const shiftsSkipped: { jobTitle: string, date: string; startTime: string; endTime: string }[] = [];
 
     try{
         //Launch driver and open the link
@@ -344,9 +375,36 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
                 break
             }
 
-            //Find addTime element and click on it once found
-            const addTimeButton = await driver.findElement(elementToWaitFor)
-            addTimeButton.click()
+            await driver.wait(until.elementsLocated(By.css(".well.table-responsive")), 1000);
+
+            const jobContainers: WebElement[] = await driver.findElements(By.css(".well.table-responsive"));
+
+            let jobTitleFound = false;
+            //Loop through job containers to find job title
+            for (const container of jobContainers){
+                const headingElement = await container.findElement(By.css("h4.sectionHeading"));
+                const headingText = await headingElement.getText();
+
+                //When job title found, hit add button
+                if(headingText.includes(currentShift.jobTitle)) {
+                    const addTimeButton = await container.findElement(By.css("a#addTime"));
+                    await driver.wait(until.elementIsVisible(addTimeButton), 500);
+                    await addTimeButton.click();
+                    jobTitleFound = true;
+                    break;
+                }
+            }
+
+            //If job title was not found add that to shift's being skipped
+            if(!jobTitleFound){
+                shiftsSkipped.push({
+                    jobTitle: currentShift.jobTitle,
+                    date: currentShift.date,
+                    startTime: currentShift.startTime,
+                    endTime: currentShift.endTime
+                })
+                break;
+            }
 
             //Select the shift start date. Will wait 1second until element is loaded in
             const startDateSelector = await driver.wait(until.elementLocated(By.id("date")), 1000);
@@ -393,6 +451,7 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
             //When clicking save, if error pops up, add into shifts being skipped
             if(await elementExists(driver, By.id("errorMessageHolder"))) {
                 shiftsSkipped.push({
+                    jobTitle: currentShift.jobTitle,
                     date: currentShift.date,
                     startTime: currentShift.startTime,
                     endTime: currentShift.endTime
@@ -428,11 +487,10 @@ async function runSeleniumScript(window: any, data: ExcelData[], startDate: stri
         return
 
     } catch(error){
-        console.log(error)
+        console.error(error)
         sendProgressUpdates(window, "Error occured while adding shifts.", true)
     } finally {
         //Quit driver after process is done
-        console.log(shiftsSkipped)
         await driver.quit();
     }
 }
@@ -455,5 +513,54 @@ async function elementExists(driver: any, element: any): Promise<boolean>{
     }
 }
 
+async function collectJobTitles(window: any): Promise<string[]> {
+    //Check if chrome driver exists
+    await ensureChromedriverExists(window);
+
+    //Initializing driver
+    const options = new Options()
+    const driver = await new Builder()
+        .forBrowser('chrome')
+        .setChromeOptions(options)
+        .setChromeService(new ServiceBuilder(chromedriverPath))
+        .build();
+
+    const titlesList: string[] = [];
+
+    try{
+        //Launch driver and open the link
+        await driver.get("https://eservices.minnstate.edu/finance-student/timeWorked.do?campusid=071");
+
+        //Wait 2 minutes for the Add Time button to show up
+        //This is where the user has 2 minutes to login to website. it will terminate if not logged in with specified time 
+        const elementToWaitFor = By.id('addTime')
+        await driver.wait(until.elementLocated(elementToWaitFor), 120000)
+
+        //Initilizing driver window to control if window should be hidden
+        const driverWindow = driver.manage().window()
+        await driverWindow.minimize()
+        
+        const jobTitles = await driver.findElements(By.css('.well.table-responsive'))
+
+        for(let job of jobTitles){
+            let heading = await job.findElement(By.css('.sectionHeading'))
+            let text = await heading.getText()
+            titlesList.push(text)
+        }
+
+        await driver.sleep(500)
+        
+        return titlesList
+
+    } catch(error){
+        console.error(error)
+    } finally {
+        //Quit driver after process is done
+        await driver.quit();
+    }
+
+    return titlesList
+}
+
 //Only exporting the selenium script since other functions are used by it already
-export { runSeleniumScript };
+export { runSeleniumScript, collectJobTitles };

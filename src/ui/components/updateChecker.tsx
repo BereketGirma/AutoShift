@@ -1,7 +1,7 @@
 import { Box, List, Typography, Button, ListItem, Paper, IconButton, Tooltip } from '@mui/material';
 import { useState, useEffect } from 'react';
 import LaunchIcon from '@mui/icons-material/Launch'
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
+// import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import LoopIcon from '@mui/icons-material/Loop'
 import UpdateModal from './UpdateModal';
 
@@ -17,16 +17,20 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
     
     const updateList = [
         {
-            version: '1.0.0',
-            released: '1/20/2025',
+            version: '1.1 - Latest',
+            released: '2/24/2025',
             url: 'some url'
         },
         {
-            version: '0.0.0',
-            released: '1/20/2025',
-            url: 'some url'
+            version: '1.0 - Beta',
+            released: '1/25/2025',
+            url: 'https://github.com/BereketGirma/AutoShift/releases/tag/AutoShift-v1.0-Beta'
         },
     ]
+
+    const openExternalLink = (url: string) => {
+        window.electron.invoke('open-external-link', url);
+    }
     
     useEffect(() => {
         const getPlatform = async () => {
@@ -129,14 +133,14 @@ function UpdateChecker({onNavigate}: updateCheckerProps) {
                                     </Box>
 
                                     <Box display='flex' gap={'1em'}>
-                                        <Tooltip title="Download">
+                                        {/* <Tooltip title="Download">
                                             <IconButton color='primary'>
                                                 <FileDownloadIcon />
                                             </IconButton>
-                                        </Tooltip>
+                                        </Tooltip> */}
                                         
                                         <Tooltip title="Open link">
-                                            <IconButton color='primary'>
+                                            <IconButton color='primary' onClick={() => openExternalLink(update.url)}>
                                                 <LaunchIcon />
                                             </IconButton>
                                         </Tooltip>

@@ -34,9 +34,8 @@ const UpdateModal: React.FC<UpdateModalProps> = ({ open, onClose }) => {
 
         const response = await window.electron.invoke('start-download');
         if(response.success){
-            console.log('Download Started successfully');
+            return response
         } else {
-            console.log("HMM WHY NO WORK",response)
             console.error('Failed to start download:', response.error)
         }
     }

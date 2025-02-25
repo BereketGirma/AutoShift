@@ -26,7 +26,7 @@ export interface EventPayloadMapping {
         request: void,
         response: {
             success: boolean;
-            data?: ExcelData[];
+            data?: Record<string, ExcelData[]>;
             error?: string;
         };
     };
@@ -96,7 +96,7 @@ export interface EventPayloadMapping {
         }
     },
 
-    'open-external': {
+    'open-external-link': {
         request: { url: string },
         response: void
     },
@@ -111,7 +111,32 @@ export interface EventPayloadMapping {
         response: { 
             confirmed: boolean 
         }
-    }
+    },
+
+    'create-new-sheet': {
+        request: { sheetName: string },
+        response: {
+            success: boolean,
+            error?: string
+        }
+    },
+
+    'collect-job-titles': {
+        request: void,
+        response: {
+            success: boolean,
+            list: string[],
+            error?: string
+        }
+    },
+
+    'remove-job-title': {
+        request: { jobTitle: string },
+        response: {
+            success:boolean,
+            error?: string
+        }
+    },
     //Add more events here
 }
 
@@ -138,8 +163,7 @@ export async function getPlatform(): Promise<string> {
         return "win32"
     } else if(platform === "darwin") {
         return arch === "arm64" ? "mac-arm64" : "mac-x64"
-    } else if(platform === "linux") {
-        return "linux64"
     }
-    throw new Error("Unsupported platform. Only Windows, MacOS and Linux are supported.")
+    
+    throw new Error("Unsupported platform. Only Windows or MacOS are supported.")
 }

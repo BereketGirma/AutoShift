@@ -1,5 +1,5 @@
 import { ExcelOperations } from './excelOperations.js';
-import { runSeleniumScript } from './script.js';
+import { runSeleniumScript, collectJobTitles } from './script.js';
 import fs from 'fs';
 import { createIpcMain, ExcelData, getPlatform } from './util.js'
 import { ipcMain, BrowserWindow, shell } from 'electron';
@@ -36,11 +36,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     })
 
     ipc.handle('start-download', async () => {
-        console.log('Attempting to start download')
         try{
             //Initiates app update download
             await autoUpdater.downloadUpdate()
-            console.log('Download started successfully.')
             return { succcess: true, message: 'Downloading update' }
         } catch (error: any) {
             console.error('Error starting download:', error)
@@ -88,9 +86,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     })
 
     //Handles writing into excel file
-    ipc.handle('write-into-file', async (_event, newData: ExcelData[]) => {
+    ipc.handle('write-into-file', async (_event, sheetName: string, newData: ExcelData[]) => {
         try{
-            await excelOps.writeIntoFile(newData)
+            await excelOps.writeIntoFile(sheetName, newData)
             return { success: true }
         } catch (error: any) {
             return {success: false, error: error.message || 'Failed to save shift'}
@@ -98,9 +96,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     })
 
     //Handles data deletion from excel file
-    ipc.handle('delete-from-file', async (_event, removedData: ExcelData) => {
+    ipc.handle('delete-from-file', async (_event, removedData: ExcelData, sheetName: string,) => {
         try{
-            await excelOps.deleteFromFile(removedData);
+            await excelOps.deleteFromFile(removedData, sheetName);
             return { success: true }
         } catch (error: any) {
             return { success: false, error: error.message || 'Failed to delete shift'}
@@ -110,9 +108,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     //Handles running selenium script
     ipc.handle('run-script', async (_event, startDate: string, endDate: string) => {
         try {
-            console.log("Running Selenium script...")
             if (mainWindow) {
-            await runSeleniumScript(mainWindow, await excelOps.readExcelFile(), startDate, endDate);
+                await runSeleniumScript(mainWindow, await excelOps.readExcelFile(), startDate, endDate);
             } else {
             throw new Error('Main window is not initialized');
             }
@@ -134,7 +131,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     })
 
     //Redirects to GitHub releases page for download
-    ipc.handle('open-external', async (_event, url: string) => {
+    ipc.handle('open-external-link', async (_event, url: string) => {
         await shell.openExternal(url)
     })
 
@@ -147,6 +144,33 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
     ipc.handle('confirm-run-script', async (_event: any, response: { confirmed: boolean }) => {
         ipcMain.emit('confirm-run-script', null, response)
         return response;
+    })
+
+    ipc.handle('create-new-sheet', async (_event, sheetName: string) => {
+        try{
+            await excelOps.createNewSheet(sheetName)
+            return { success: true}
+        } catch (error: any){
+            return { success: false, error: error.message || 'Failed to save shift'}
+        }
+    })
+
+    ipc.handle('collect-job-titles', async () => {
+        try{
+            const jobTitles = await collectJobTitles(mainWindow)
+            return {success: true, list: jobTitles}
+        } catch (error: any){
+            return { success: false, error: error.message || 'Failed to collect job titles', list: [] }
+        }
+    })
+
+    ipc.handle('remove-job-title', async (_event, sheetName: string) => {
+        try{
+            await excelOps.deleteSheet(sheetName)
+            return {success: true}
+        } catch (error: any){
+            return { success: false, error: error.message || 'Failed to remove job title' }
+        }
     })
 
 }

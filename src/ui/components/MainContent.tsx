@@ -1,54 +1,53 @@
 import '../styles/MainContent.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { 
     Typography, 
-    Table,
-    TableBody, 
-    TableCell, 
-    TableContainer,
-    Paper,
-    TableHead,
-    TableRow,
     Button,
     IconButton,
     Box,
     Container,
     Badge,
-    Tooltip
+    Tooltip,
+    Paper
 } from '@mui/material';
 
 import DownloadIcon from '@mui/icons-material/Download'
-import DeleteIcon from '@mui/icons-material/Delete';
 import AddShiftModal from './AddShiftModal';
 import { ExcelData } from '../../electron/util';
 import { useSnackbar } from './SnackbarProvider';
+import ModernTabs from './TabOptions';
 
 
 interface MainContentProps {
     onNavigateToCalander: () => void
     onNavigateToUpdate: () => void;
+    onSheetSelected?: (sheet: string) => void;
 }
 
 function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentProps) {
     const { enqueueSnackbar } = useSnackbar();
-    const [shifts, setShift] = useState<ExcelData[]>([]);
+    const [shifts, setShift] = useState<Record<string, ExcelData[]>>({});
     const [hasUpdates, setHasUpdates] = useState<boolean>(true);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [sheetSelected, setSheetSelected] = useState<string | null>(null);
 
-    const getShifts = () => {
-        window.electron.invoke('read-excel-file')
-            .then((response: { success: boolean, data:ExcelData[]}) => {
-                if(Array.isArray(response.data) && response.data.length > 0){
+    const sheetHasData = useMemo(() => {
+        return !Object.values(shifts).some(sheet => sheet.length > 0)
+    }, [shifts])
+
+    const getShifts = async() => {
+        await window.electron.invoke('read-excel-file')
+            .then((response: { success: boolean, data: Record<string, ExcelData[]> }) => {
+                if(response.data && typeof response.data === 'object'){
                     setShift(response.data);
                 } else {
-                    setShift([]);
+                    setShift({});
                 }
             })
             .catch((error: string) => {
                 console.error('Error reading shifts:',error)
             })
     }
-
-    const [modalOpen, setModalOpen] = useState(false);
 
     const handleOpenModal = () => {
         setModalOpen(true);
@@ -59,7 +58,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
     };
 
     const handleSaveShift = (data: ExcelData) => {
-        window.electron.invoke('write-into-file', [data])
+        window.electron.invoke('write-into-file', sheetSelected, [data])
             .then((response: { success: boolean; error?: string }) => {
                 if(response.success) {
                     enqueueSnackbar(`Saved Shift: ${data.day} from ${data.startTime} to ${data.endTime}`, 'success')
@@ -78,22 +77,6 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
             })
     }
 
-    const handleDeleteShift = (shiftToDelete: ExcelData) => {
-        window.electron.invoke('delete-from-file', shiftToDelete)
-            .then((response: { success: boolean; error?: string }) => {
-                if(response.success) {
-                    enqueueSnackbar(`Deleted Shift: ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime}`, 'warning')
-                    return getShifts()
-                } else {
-                    enqueueSnackbar(`Failed to delete Shift: ${shiftToDelete.day} from ${shiftToDelete.startTime} to ${shiftToDelete.endTime}`, 'error')
-                    throw new Error(response.error || 'Failed to delete shift')
-                }
-            })
-            .catch((error: string) => {
-                console.error('Error invoking delete from file:', error)
-            })
-    }
-
     const checkForUpdates = async () => {
         const updates = await window.electron.invoke('check-for-updates')
         if(updates.check){
@@ -103,15 +86,33 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
         }
     };
 
+    const handleSheetSelected = (sheet: string) => {
+        setSheetSelected(sheet)
+    }
+
     useEffect(() => {
         checkForUpdates();
         getShifts();
     }, [])
 
     return (
-        <div className='home'>
+        <Box 
+            display='flex'
+            flexDirection='column'
+            height='100%'
+            width='100%'
+            overflow='hidden'
+            borderRadius='5px'
+            textAlign='center'
+            gap='1rem'
+            p='1rem'
+            boxSizing='border-box'
+            sx={{
+                background:'white',
+            }}
+        >
             <Box
-                display='flexbox'
+                display='flex'
                 flexDirection='column'
                 position='relative'
             >
@@ -153,66 +154,34 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                         </IconButton>
                     </Tooltip>
                 )}
-                
-                
             </Box>
             
-
-            <Paper className='shift-container'>
-                <TableContainer>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>ID</TableCell>
-                                <TableCell>Day</TableCell>
-                                <TableCell>Shift Start</TableCell>
-                                <TableCell>Shift End</TableCell>
-                                <TableCell>Remove</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {shifts.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan = {5} align='center'>
-                                        No shifts found. Add a shift to continue!
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                shifts.map((shift, index) => (
-                                <TableRow key={index}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell>{shift.day}</TableCell>
-                                    <TableCell>{shift.startTime}</TableCell>
-                                    <TableCell>{shift.endTime}</TableCell>
-                                    <TableCell>
-                                        <Tooltip title="Delete">
-                                            <IconButton
-                                                color = "error"
-                                                className='no-outline'
-                                                onClick={() => handleDeleteShift(shift)}
-                                            >
-                                                <DeleteIcon/>
-                                            </IconButton>
-                                        </Tooltip>
-                                    </TableCell>
-                                </TableRow>
-                            )))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+            <Paper sx={{
+                flex: '1',
+                display: 'flex', 
+                flexDirection: 'column',
+                overflow:'hidden',
+                height: '100%'
+            }}>
+                <ModernTabs shifts={shifts} getShifts={getShifts} onSheetSelected={handleSheetSelected}/>
             </Paper>
             
-            <div className='button-container'>
-                <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal}>
+            <Box
+                display={'flex'}
+                justifyContent={'center'}
+                gap={2}
+                p={1}
+            >
+                <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal} sx={{color: 'white', fontWeight: 'bold'}}>
                     Add Shift
                 </Button>
-                <Button variant="contained" color='secondary' onClick={onNavigateToCalander} disabled={shifts.length === 0}>
+                <Button variant="contained" color='secondary' onClick={onNavigateToCalander} sx={{color: 'white', fontWeight: 'bold'}} disabled={sheetHasData}>
                     Continue
                 </Button>
-            </div>
+            </Box>
 
             <AddShiftModal open={modalOpen} onClose={handleCloseModal} onAddShift={handleSaveShift}></AddShiftModal>
-        </div>
+        </Box>
     )
 }
 
