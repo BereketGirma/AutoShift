@@ -9,6 +9,7 @@ import {
     SelectChangeEvent,
     Box,
     Typography,
+    TextField,
 } from '@mui/material';
 import { useSnackbar } from './SnackbarProvider';
 
@@ -16,7 +17,7 @@ import { useSnackbar } from './SnackbarProvider';
 interface AddShiftModalProps {
     open: boolean;
     onClose: () => void;
-    onAddShift: (Shift: { day: string; startTime: string; endTime: string}) => void;
+    onAddShift: (Shift: { day: string; startTime: string; endTime: string; comment: string | null}) => void;
 }
 
 const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift }) => {
@@ -25,7 +26,8 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
     const [shiftData, setShiftData] = useState({
         day: '',
         startTime: '',
-        endTime: ''
+        endTime: '',
+        comment: ''
     });
 
     //Function to add error messages into snackbar queue
@@ -35,7 +37,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
      * Handling changes occuring in modal such as selection or input
      * @param e event that is occuring
      */
-    const handleChange = (e: SelectChangeEvent<string>) => {
+    const handleChange = (e: React.ChangeEvent< HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
         const { name, value } = e.target;
         setShiftData((prev) => ({
             ...prev,
@@ -62,7 +64,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
             return;
         }
         onAddShift(shiftData);
-        setShiftData({ day: '', startTime: '', endTime: ''})
+        setShiftData({ day: '', startTime: '', endTime: '', comment: ''})
         onClose()
     }
 
@@ -192,6 +194,16 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
                             </MenuItem>
                         ))}
                     </Select>
+                </FormControl>
+
+                {/* Comment text field */}
+                <FormControl fullWidth sx={{mt:2}}>
+                    <TextField 
+                        value={shiftData.comment}
+                        onChange={handleChange} 
+                        name='comment'
+                        label='Comment'
+                    />
                 </FormControl>
 
                 {/* Button container */}

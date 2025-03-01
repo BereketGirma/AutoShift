@@ -266,7 +266,7 @@ async function formatTime(time: string): Promise<string> {
  * @returns an array filled with the shifts spanning between the given start and end date
  */
 async function generateSchedule(data: Record<string, ExcelData[]>, startDate: string, endDate: string){
-    const schedule: { jobTitle: string, date: string; startTime: string; endTime: string }[] = [];
+    const schedule: { jobTitle: string, date: string; startTime: string; endTime: string, comment: string }[] = [];
 
     //Sorting days for easier comparison with dayjs type
     const dayOfWeekMap = {
@@ -302,7 +302,8 @@ async function generateSchedule(data: Record<string, ExcelData[]>, startDate: st
                             jobTitle: sheetName,
                             date: currentDate.format('YYYYMMDD'),
                             startTime: await formatTime(shift.startTime),
-                            endTime: await formatTime(shift.endTime)
+                            endTime: await formatTime(shift.endTime),
+                            comment: shift.comment ? shift.comment : ''
                         })
                     }
                 }
@@ -401,7 +402,7 @@ async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>,
                     jobTitle: currentShift.jobTitle,
                     date: currentShift.date,
                     startTime: currentShift.startTime,
-                    endTime: currentShift.endTime
+                    endTime: currentShift.endTime,
                 })
                 break;
             }
@@ -443,6 +444,10 @@ async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>,
             const endTimeSelector = await driver.wait(until.elementLocated(By.id("endTime")), 1000);
             const endTimeOption = await endTimeSelector.findElement(By.css(`option[value="${currentShift.endTime}"]`))
             await endTimeOption.click()
+
+            //Select the comment text area
+            const commentArea = await driver.wait(until.elementLocated(By.id("comments")), 1000);
+            commentArea.sendKeys(currentShift.comment)
 
             //Save the selected shift
             const saveTimeButton = await driver.findElement(By.id("timeSaveOrAddId"));

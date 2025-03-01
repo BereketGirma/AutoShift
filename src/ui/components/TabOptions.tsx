@@ -257,6 +257,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                                         <TableCell>Day</TableCell>
                                         <TableCell>Shift Start</TableCell>
                                         <TableCell>Shift End</TableCell>
+                                        <TableCell>Comments</TableCell>
                                         <TableCell>Remove</TableCell>
                                     </TableRow>
                                 </TableHead>
@@ -268,6 +269,16 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                                                 <TableCell>{shift.day}</TableCell>
                                                 <TableCell>{shift.startTime}</TableCell>
                                                 <TableCell>{shift.endTime}</TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        maxWidth: 200,
+                                                        whiteSpace: 'wrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis'
+                                                    }}
+                                                >
+                                                    {shift.comment}
+                                                </TableCell>
                                                 <TableCell>
                                                     <Tooltip title="Delete">
                                                         <IconButton
@@ -283,7 +294,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan = {5} align='center'>
+                                            <TableCell colSpan = {6} align='center'>
                                                 No shifts found. Add a shift to continue!
                                             </TableCell>
                                         </TableRow>

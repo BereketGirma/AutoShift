@@ -10,6 +10,7 @@ export interface ExcelData {
     day: string;
     startTime: string;
     endTime: string;
+    comment: string | null;
 }
 
 //This is where all ipc handlers format are defined
