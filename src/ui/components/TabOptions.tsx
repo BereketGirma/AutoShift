@@ -23,6 +23,7 @@ import AddIcon from '@mui/icons-material/AddCircle'
 import CloseIcon from '@mui/icons-material/Close'
 import { useSnackbar } from './SnackbarProvider';
 import { ExcelData } from '../../electron/util';
+// import EditShiftModal from './EditShiftModal';
 
 const ModernTab = styled(Tab) (({ theme }) => ({
     textTransform: 'none',
@@ -72,16 +73,16 @@ interface ModernTabsProps {
     shifts: Record<string, ExcelData[]>;
     getShifts: () => Promise<void>;
     onSheetSelected?: (sheet: string) => void;
+    onEdit: (shift: Record<string, ExcelData[]>) => void;
 }
 
-function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
+function ModernTabs({shifts, getShifts, onSheetSelected, onEdit}: ModernTabsProps) {
     const { enqueueSnackbar } = useSnackbar();
     const [tabValue, setTabValue] = useState('0');
     const [tabModalOpen, setTabModalOpen] = useState(false);
     const [newTabTitle, setNewTabTitle] = useState('');
     const sheetNames = Object.keys(shifts)
     const selectedSheet = sheetNames[parseInt(tabValue)] || '';
-    const [manualEntry, setManualEntry] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const containsTabs = Object.keys(shifts).length !== 0
     const [showWarning, setShowWarning] = useState(false);
@@ -108,7 +109,6 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
 
     const handleCloseModal = () => {
         setIsLoading(false)
-        setManualEntry(false)
         setTabModalOpen(false);
         setNewTabTitle("")
     }
@@ -203,7 +203,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                     <Box>
                         <Button 
                             color='primary' 
-                            onClick={() => handleOpenModal()}
+                            onClick={() => handleAutoRetrieve()}
                             sx={{ display: 'flex', alignItems: 'center', gap:1, textTransform: 'None', height: '3rem'}}
                         >
                             <AddIcon/>
@@ -230,7 +230,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                         </ModernTabList>
                         <Box display={'flex'} justifyContent={'center'}>
                             <Tooltip title="Add Tab">
-                                <IconButton color='primary' onClick={() => handleOpenModal()}>
+                                <IconButton color='primary' onClick={() => handleAutoRetrieve()}>
                                     <AddIcon/>
                                 </IconButton>
                             </Tooltip>
@@ -328,10 +328,10 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
 
                     {/* Modal title */}
                     <Typography variant='h6' component = 'h2' color='black'>
-                        Add New Tab
+                        Retrieving Job Titles
                     </Typography>
 
-                    {isLoading ? (
+                    {isLoading && (
                         <Box 
                             display={"flex"}
                             flexDirection={"column"}
@@ -340,44 +340,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                         >
                             <CircularProgress size="3rem"/>
                         </Box>
-                    ):(
-                        !manualEntry ? (
-                            <Box 
-                                display={"flex"}
-                                flexDirection={"column"}
-                                gap={2}
-                            >
-                                <Button variant='contained' onClick={() => setManualEntry(true)}>
-                                    Enter Manually
-                                </Button>
-                                <Typography color='black'>or</Typography>
-                                <Button variant='contained' onClick={handleAutoRetrieve}>
-                                    Auto retrieve
-                                </Button>
-                            </Box>
-                            ):(
-                                <>
-                                    <TextField label="Tab Name" variant="outlined" fullWidth onChange={handleChange}/>
-    
-                                    {/* Button container */}
-                                    <Box 
-                                        sx={{ 
-                                            display: 'flex', 
-                                            justifyContent:'center', 
-                                            gap: 2
-                                        }}
-                                    >
-                                        <Button variant='contained' color="error" onClick={handleCloseModal}>
-                                            Cancel
-                                        </Button>
-                                        <Button variant='contained' color="primary" onClick={handleAddNewTab}>
-                                            Save
-                                        </Button>
-                                    </Box>
-                                </>
-                            )
-                        )
-                    }
+                    )}
                 </Box>
             </Modal>
         )}
