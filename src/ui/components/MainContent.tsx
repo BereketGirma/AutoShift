@@ -28,7 +28,8 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
     const { enqueueSnackbar } = useSnackbar();
     const [shifts, setShift] = useState<Record<string, ExcelData[]>>({});
     const [hasUpdates, setHasUpdates] = useState<boolean>(true);
-    const [modalOpen, setModalOpen] = useState(false);
+    const [addModalOpen, setAddModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
     const [sheetSelected, setSheetSelected] = useState<string | null>(null);
 
     const sheetHasData = useMemo(() => {
@@ -49,12 +50,12 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
             })
     }
 
-    const handleOpenModal = () => {
-        setModalOpen(true);
+    const toggleAddModal = () => {
+        setAddModalOpen(!addModalOpen);
     };
 
-    const handleCloseModal = () => {
-        setModalOpen(false);
+    const toggelEditModal = () => {
+        setEditModalOpen(!editModalOpen);
     };
 
     const handleSaveShift = (data: ExcelData) => {
@@ -88,6 +89,10 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
 
     const handleSheetSelected = (sheet: string) => {
         setSheetSelected(sheet)
+    }
+
+    const getShiftToEdit = () => {
+        
     }
 
     useEffect(() => {
@@ -163,7 +168,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 overflow:'hidden',
                 height: '100%'
             }}>
-                <ModernTabs shifts={shifts} getShifts={getShifts} onSheetSelected={handleSheetSelected}/>
+                <ModernTabs shifts={shifts} getShifts={getShifts} onSheetSelected={handleSheetSelected} onEdit={getShiftToEdit}/>
             </Paper>
             
             <Box
@@ -172,7 +177,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 gap={2}
                 p={1}
             >
-                <Button variant="contained" color='primary' className='add-shift' onClick={handleOpenModal} sx={{color: 'white', fontWeight: 'bold'}}>
+                <Button variant="contained" color='primary' className='add-shift' onClick={toggleAddModal} sx={{color: 'white', fontWeight: 'bold'}}>
                     Add Shift
                 </Button>
                 <Button variant="contained" color='secondary' onClick={onNavigateToCalander} sx={{color: 'white', fontWeight: 'bold'}} disabled={sheetHasData}>
@@ -180,7 +185,7 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
                 </Button>
             </Box>
 
-            <AddShiftModal open={modalOpen} onClose={handleCloseModal} onAddShift={handleSaveShift}></AddShiftModal>
+            <AddShiftModal open={addModalOpen} onClose={toggleAddModal} onAddShift={handleSaveShift}></AddShiftModal>
         </Box>
     )
 }
