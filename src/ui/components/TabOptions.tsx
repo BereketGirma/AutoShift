@@ -13,7 +13,6 @@ import {
     Modal,
     Typography,
     Button,
-    TextField,
     CircularProgress,
 } from '@mui/material';
 import {  TabList, TabPanel, TabContext } from '@mui/lab'
@@ -103,48 +102,15 @@ function ModernTabs({shifts, getShifts, onSheetSelected, onEdit}: ModernTabsProp
             })
     }
 
-    const handleOpenModal = () => {
-        setTabModalOpen(true)
-    }
-
     const handleCloseModal = () => {
         setIsLoading(false)
         setTabModalOpen(false);
         setNewTabTitle("")
     }
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setNewTabTitle(event.target.value)
-    }
-
     const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
         setTabValue(newValue);
     };
-
-    const handleAddNewTab = async () => {
-        try{
-            if(!newTabTitle.trim()){
-                enqueueSnackbar("Tab name can't be empty!", 'error');
-                return
-            };
-
-            if(sheetNames.includes(newTabTitle)){
-                enqueueSnackbar(`Tab for "${newTabTitle}" already exists! Please select a new name.`, 'error')
-                return
-            }
-            
-            await window.electron.invoke('create-new-sheet', newTabTitle)
-            await getShifts()
-
-            enqueueSnackbar(`${newTabTitle} has been created!`, 'success')
-            setTabValue((sheetNames.length).toString())
-            handleCloseModal();
-        } catch (error) {
-            console.error('Error occured: ', error)
-            enqueueSnackbar(`Failed to add ${newTabTitle} tab!`, 'error')
-
-        }
-    }
 
     const handleAutoRetrieve = async () => {
         try{
@@ -348,42 +314,42 @@ function ModernTabs({shifts, getShifts, onSheetSelected, onEdit}: ModernTabsProp
         
         <Modal open={showWarning}>
             <Box 
-            sx={{
-                display:'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                bgcolor: 'background.paper',
-                borderRadius: '5px',
-                boxShadow: 24,
-                p: 2,
-                width: '80%',
-                textAlign: 'center',
-                maxWidth: '400px',
-                gap: 4
-            }}
-        >
-            <Box>
-                <Typography color='black' variant='h5'>Removing Tab - "{selectedSheet}"</Typography>
+                sx={{
+                    display:'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    bgcolor: 'background.paper',
+                    borderRadius: '5px',
+                    boxShadow: 24,
+                    p: 2,
+                    width: '80%',
+                    textAlign: 'center',
+                    maxWidth: '400px',
+                    gap: 4
+                }}
+            >
+                <Box>
+                    <Typography color='black' variant='h5'>Removing Tab - "{selectedSheet}"</Typography>
 
-                <Typography color='error'>
-                    WARNING!! This action will get rid of any shifts saved under this tab. 
-                    Please proceed if you agree to these terms.
-                </Typography>            
-            </Box>
+                    <Typography color='error'>
+                        WARNING!! This action will get rid of any shifts saved under this tab. 
+                        Please proceed if you agree to these terms.
+                    </Typography>            
+                </Box>
 
-            <Box display={'flex'} gap={2}>
-                <Button variant='contained' color='error' onClick={() => setShowWarning(false)}>
-                    Cancel
-                </Button>
-                <Button variant='contained' onClick={handleDeleteTab}>
-                    Remove
-                </Button>
+                <Box display={'flex'} gap={2}>
+                    <Button variant='contained' color='error' onClick={() => setShowWarning(false)}>
+                        Cancel
+                    </Button>
+                    <Button variant='contained' onClick={handleDeleteTab}>
+                        Remove
+                    </Button>
+                </Box>
             </Box>
-        </Box>
 
         </Modal>
             
