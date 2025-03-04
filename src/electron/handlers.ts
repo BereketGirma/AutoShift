@@ -105,6 +105,16 @@ export function registerIpcHandlers(mainWindow: BrowserWindow, autoUpdater: AppU
         }
     })
 
+    //Handles data audit into excel file
+    ipc.handle('edit-from-file', async (_event, updatedShift: ExcelData, sheetName: string,) => {
+        try{
+            await excelOps.EditShiftOnFile(updatedShift, sheetName);
+            return { success: true }
+        } catch (error: any) {
+            return { success: false, error: error.message || 'Failed to delete shift'}
+        }
+    })
+
     //Handles running selenium script
     ipc.handle('run-script', async (_event, startDate: string, endDate: string) => {
         try {
