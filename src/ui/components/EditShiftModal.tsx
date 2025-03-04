@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Button,
     Modal,
@@ -12,18 +12,75 @@ import {
     TextField,
 } from '@mui/material';
 import { useSnackbar } from './SnackbarProvider';
+import { ExcelData } from '../../electron/util';
 
 //Interface to handle format
 interface EditShiftModalProps {
     open: boolean;
     onClose: () => void;
-    onEditShift: (Shift: { day: string; startTime: string; endTime: string; comment: string | null}) => void;
+    shiftToEdit: ExcelData | null;
+    onEditShift: (shift: ExcelData | null) => void;
 }
 
-const EditShiftModal: React.FC<EditShiftModalProps> = ({ open, onClose, onEditShift }) => {
+/**
+     * Handles time prasing and conversion to 24hour format
+     * @param time the shift time
+     * @returns the time converted into 24hour format
+     */
+const parseTime = (time:string): number => {
+    const [hourMin, period] = time.split(' ')
+    let[hour, minute] = hourMin.split(':').map(Number)
 
+    //Conversion logic
+    if(period === 'PM' && hour !== 12){
+        hour += 12
+    } else if (period === 'AM' && hour === 12){
+        hour = 0;
+    }
+    return hour * 60 + minute;
+}
+
+/**
+ * Generates an array of the 12hour combination of am and pm 
+ * @returns The array of combined hours of am and pm
+ */
+const generate12HourTimeOptions = () => {
+    const amTimes = []
+    const pmTimes = []
+
+    for(let hour = 0; hour < 12; hour++){
+        const formattedHour = hour === 0 ? 12: hour;
+        const format1 = `${formattedHour}:00 AM`
+        const format2 = `${formattedHour}:15 AM`
+        const format3 = `${formattedHour}:30 AM`
+        const format4 = `${formattedHour}:45 AM`
+
+        amTimes.push(format1, format2, format3, format4);
+    }
+
+    for(let hour = 12; hour < 24; hour++){
+        const formattedHour = hour === 12 ? 12: hour%12;
+        const format1 = `${formattedHour}:00 PM`
+        const format2 = `${formattedHour}:15 PM`
+        const format3 = `${formattedHour}:30 PM`
+        const format4 = `${formattedHour}:45 PM`
+
+        pmTimes.push(format1, format2, format3, format4);
+    }
+
+    return [...amTimes, ...pmTimes]
+}
+
+const EditShiftModal: React.FC<EditShiftModalProps> = ({ open, onClose, shiftToEdit, onEditShift }) => {
+    //Holds the generated array
+    const timeOptions = generate12HourTimeOptions();
+
+    //Array of days of the week
+    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    
     //Initial value of the shiftData retrived from modal
     const [shiftData, setShiftData] = useState({
+        id: 0,
         day: '',
         startTime: '',
         endTime: '',
@@ -64,64 +121,21 @@ const EditShiftModal: React.FC<EditShiftModalProps> = ({ open, onClose, onEditSh
             return;
         }
         onEditShift(shiftData);
-        setShiftData({ day: '', startTime: '', endTime: '', comment: ''})
+        setShiftData({ id: 0, day: '', startTime: '', endTime: '', comment: ''})
         onClose()
     }
 
-    /**
-     * Handles time prasing and conversion to 24hour format
-     * @param time the shift time
-     * @returns the time converted into 24hour format
-     */
-    const parseTime = (time:string): number => {
-        const [hourMin, period] = time.split(' ')
-        let[hour, minute] = hourMin.split(':').map(Number)
-
-        //Conversion logic
-        if(period === 'PM' && hour !== 12){
-            hour += 12
-        } else if (period === 'AM' && hour === 12){
-            hour = 0;
+    useEffect(() => {
+        if (open && shiftToEdit) {
+            setShiftData({
+                id: shiftToEdit.id || 0,
+                day: shiftToEdit.day || '',
+                startTime: shiftToEdit.startTime || '',
+                endTime: shiftToEdit.endTime || '',
+                comment: shiftToEdit.comment || ''
+            });
         }
-        return hour * 60 + minute;
-    }
-
-    /**
-     * Generates an array of the 12hour combination of am and pm 
-     * @returns The array of combined hours of am and pm
-     */
-    const generate12HourTimeOptions = () => {
-        const amTimes = []
-        const pmTimes = []
-
-        for(let hour = 0; hour < 12; hour++){
-            const formattedHour = hour === 0 ? 12: hour;
-            const format1 = `${formattedHour}:00 AM`
-            const format2 = `${formattedHour}:15 AM`
-            const format3 = `${formattedHour}:30 AM`
-            const format4 = `${formattedHour}:45 AM`
-
-            amTimes.push(format1, format2, format3, format4);
-        }
-
-        for(let hour = 12; hour < 24; hour++){
-            const formattedHour = hour === 12 ? 12: hour%12;
-            const format1 = `${formattedHour}:00 PM`
-            const format2 = `${formattedHour}:15 PM`
-            const format3 = `${formattedHour}:30 PM`
-            const format4 = `${formattedHour}:45 PM`
-
-            pmTimes.push(format1, format2, format3, format4);
-        }
-
-        return [...amTimes, ...pmTimes]
-    }
-
-    //Holds the generated array
-    const timeOptions = generate12HourTimeOptions();
-
-    //Array of days of the week
-    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    }, [open, shiftToEdit]);
 
     return (
         <Modal open={open} onClose={onClose}>
