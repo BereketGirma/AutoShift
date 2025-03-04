@@ -18,11 +18,12 @@ import {
 import {  TabList, TabPanel, TabContext } from '@mui/lab'
 import { styled } from '@mui/system'
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/AddCircle'
 import CloseIcon from '@mui/icons-material/Close'
 import { useSnackbar } from './SnackbarProvider';
 import { ExcelData } from '../../electron/util';
-// import EditShiftModal from './EditShiftModal';
+import EditShiftModal from './EditShiftModal';
 
 const ModernTab = styled(Tab) (({ theme }) => ({
     textTransform: 'none',
@@ -75,7 +76,7 @@ interface ModernTabsProps {
     onEdit: (shift: Record<string, ExcelData[]>) => void;
 }
 
-function ModernTabs({shifts, getShifts, onSheetSelected, onEdit}: ModernTabsProps) {
+function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     const { enqueueSnackbar } = useSnackbar();
     const [tabValue, setTabValue] = useState('0');
     const [tabModalOpen, setTabModalOpen] = useState(false);
@@ -85,6 +86,8 @@ function ModernTabs({shifts, getShifts, onSheetSelected, onEdit}: ModernTabsProp
     const [isLoading, setIsLoading] = useState(false);
     const containsTabs = Object.keys(shifts).length !== 0
     const [showWarning, setShowWarning] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editShiftValue, setEditShiftValue] = useState<ExcelData | null>(null);
 
     const handleDeleteShift = (shiftToDelete: ExcelData, sheetName: string) => {
         window.electron.invoke('delete-from-file', shiftToDelete, sheetName)
@@ -100,6 +103,33 @@ function ModernTabs({shifts, getShifts, onSheetSelected, onEdit}: ModernTabsProp
             .catch((error: string) => {
                 console.error('Error invoking delete from file:', error)
             })
+    }
+
+    const handleEditShift = (shiftToEdit: ExcelData | null) => {
+        window.electron.invoke('edit-from-file', shiftToEdit, selectedSheet)
+            .then((response: { success: boolean; error?: string }) => {
+                if(response.success) {
+                    enqueueSnackbar(`Edited Shift: "${shiftToEdit?.day} from ${shiftToEdit?.startTime} to ${shiftToEdit?.endTime}" --to--> ""`, 'success')
+                    return getShifts()
+                } else {
+                    enqueueSnackbar(`Failed to edit Shift: ${shiftToEdit?.day} from ${shiftToEdit?.startTime} to ${shiftToEdit?.endTime}`, 'error')
+                    throw new Error(response.error || 'Failed to delete shift')
+                }
+            })
+            .catch((error: string) => {
+                console.error('Error invoking delete from file:', error)
+            })
+
+    }
+
+    const setShiftToEdit = (shiftToEdit: ExcelData) => {
+        console.log("Editing:", shiftToEdit)
+        setEditShiftValue(shiftToEdit)
+        toggleEditModal();
+    }
+
+    const toggleEditModal = () => {
+        setEditModalOpen(!editModalOpen);
     }
 
     const handleCloseModal = () => {
@@ -219,23 +249,24 @@ function ModernTabs({shifts, getShifts, onSheetSelected, onEdit}: ModernTabsProp
                             <Table stickyHeader>
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell>ID</TableCell>
-                                        <TableCell>Day</TableCell>
-                                        <TableCell>Shift Start</TableCell>
-                                        <TableCell>Shift End</TableCell>
-                                        <TableCell>Comments</TableCell>
-                                        <TableCell>Remove</TableCell>
+                                        <TableCell align='center'>ID</TableCell>
+                                        <TableCell align='center'>Day</TableCell>
+                                        <TableCell align='center'>Shift Start</TableCell>
+                                        <TableCell align='center'>Shift End</TableCell>
+                                        <TableCell align='center'>Comments</TableCell>
+                                        <TableCell align='center'>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {selectedSheet && shifts[selectedSheet]?.length > 0 ? (
                                         shifts[selectedSheet].map((shift, index) => (
                                             <TableRow key={index}>
-                                                <TableCell>{index + 1}</TableCell>
-                                                <TableCell>{shift.day}</TableCell>
-                                                <TableCell>{shift.startTime}</TableCell>
-                                                <TableCell>{shift.endTime}</TableCell>
+                                                <TableCell align='center'>{index + 1}</TableCell>
+                                                <TableCell align='center'>{shift.day}</TableCell>
+                                                <TableCell align='center'>{shift.startTime}</TableCell>
+                                                <TableCell align='center'>{shift.endTime}</TableCell>
                                                 <TableCell
+                                                    align='center'
                                                     sx={{
                                                         maxWidth: 200,
                                                         whiteSpace: 'wrap',
@@ -245,7 +276,17 @@ function ModernTabs({shifts, getShifts, onSheetSelected, onEdit}: ModernTabsProp
                                                 >
                                                     {shift.comment}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell align='center'>
+                                                    <Tooltip title="Edit">
+                                                        <IconButton
+                                                            color = "secondary"
+                                                            className='no-outline'
+                                                            onClick={() => setShiftToEdit(shift)}
+                                                        >
+                                                            <EditIcon/>
+                                                        </IconButton>
+                                                    </Tooltip>
+
                                                     <Tooltip title="Delete">
                                                         <IconButton
                                                             color = "error"
@@ -352,6 +393,8 @@ function ModernTabs({shifts, getShifts, onSheetSelected, onEdit}: ModernTabsProp
             </Box>
 
         </Modal>
+
+        <EditShiftModal open={editModalOpen} onClose={toggleEditModal} shiftToEdit={editShiftValue} onEditShift={handleEditShift}/>
             
 
         </Box>
