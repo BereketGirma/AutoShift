@@ -29,7 +29,6 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
     const [shifts, setShift] = useState<Record<string, ExcelData[]>>({});
     const [hasUpdates, setHasUpdates] = useState<boolean>(true);
     const [addModalOpen, setAddModalOpen] = useState(false);
-    const [editModalOpen, setEditModalOpen] = useState(false);
     const [sheetSelected, setSheetSelected] = useState<string | null>(null);
 
     const sheetHasData = useMemo(() => {
@@ -54,9 +53,6 @@ function MainContent ({onNavigateToCalander, onNavigateToUpdate}: MainContentPro
         setAddModalOpen(!addModalOpen);
     };
 
-    const toggelEditModal = () => {
-        setEditModalOpen(!editModalOpen);
-    };
 
     const handleSaveShift = (data: ExcelData) => {
         window.electron.invoke('write-into-file', sheetSelected, [data])
