@@ -12,18 +12,20 @@ import {
     TextField,
 } from '@mui/material';
 import { useSnackbar } from './SnackbarProvider';
+import { ExcelData } from '../../electron/util';
 
 //Interface to handle format
 interface AddShiftModalProps {
     open: boolean;
     onClose: () => void;
-    onAddShift: (Shift: { day: string; startTime: string; endTime: string; comment: string | null}) => void;
+    onAddShift: (Shift: ExcelData) => void;
 }
 
 const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift }) => {
 
     //Initial value of the shiftData retrived from modal
     const [shiftData, setShiftData] = useState({
+        id: 0,
         day: '',
         startTime: '',
         endTime: '',
@@ -64,7 +66,7 @@ const AddShiftModal: React.FC<AddShiftModalProps> = ({ open, onClose, onAddShift
             return;
         }
         onAddShift(shiftData);
-        setShiftData({ day: '', startTime: '', endTime: '', comment: ''})
+        setShiftData({ id: 0, day: '', startTime: '', endTime: '', comment: ''})
         onClose()
     }
 
