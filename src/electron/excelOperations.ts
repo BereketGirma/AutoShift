@@ -274,6 +274,15 @@ export class ExcelOperations {
 
             const sheetData = existingData[sheetName] || [];
 
+            //Filtered data holding every shift except the one to be updated
+            //This is used for collision check before full update
+            const filteredData = sheetData.filter((shift) => shift.id !== updatedShift.id);
+
+            //Check for an collision with shifts before adding
+            if(this.checkCollidingData(filteredData, [updatedShift])){
+                throw new Error('Collision')
+            }
+
             //Find and update the shift
             const updatedData = sheetData.map((shift): ExcelData => {
                 return shift.id === updatedShift.id ? { ...shift, ...updatedShift } : shift;
