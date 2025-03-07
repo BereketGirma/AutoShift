@@ -83,7 +83,6 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     const [newTabTitle, setNewTabTitle] = useState('');
     const sheetNames = Object.keys(shifts)
     const selectedSheet = sheetNames[parseInt(tabValue)] || '';
-    const [isLoading, setIsLoading] = useState(false);
     const containsTabs = Object.keys(shifts).length !== 0
     const [showWarning, setShowWarning] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
@@ -133,7 +132,6 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
     }
 
     const handleCloseModal = () => {
-        setIsLoading(false)
         setTabModalOpen(false);
         setNewTabTitle("")
     }
@@ -144,7 +142,7 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
 
     const handleAutoRetrieve = async () => {
         try{
-            setIsLoading(true)
+            setTabModalOpen(true);
             const jobTitles = await window.electron.invoke('collect-job-titles')
 
             if(jobTitles.success){
@@ -338,16 +336,14 @@ function ModernTabs({shifts, getShifts, onSheetSelected}: ModernTabsProps) {
                         Retrieving Job Titles
                     </Typography>
 
-                    {isLoading && (
-                        <Box 
-                            display={"flex"}
-                            flexDirection={"column"}
-                            gap={2}
-                            margin={4}
-                        >
-                            <CircularProgress size="3rem"/>
-                        </Box>
-                    )}
+                    <Box 
+                        display={"flex"}
+                        flexDirection={"column"}
+                        gap={2}
+                        margin={4}
+                    >
+                        <CircularProgress size="3rem"/>
+                    </Box>
                 </Box>
             </Modal>
         )}
