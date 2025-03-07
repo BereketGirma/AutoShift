@@ -547,11 +547,20 @@ async function collectJobTitles(window: any): Promise<string[]> {
         
         const jobTitles = await driver.findElements(By.css('.well.table-responsive'))
 
+        console.log(`Found ${jobTitles.length} job containers`)
+
         for(let job of jobTitles){
-            let heading = await job.findElement(By.css('.sectionHeading'))
-            let text = await heading.getText()
-            titlesList.push(text)
+            try{
+                await driver.executeScript("arguments[0].scrollIntoView();", job);
+                let heading = await job.findElement(By.css('.sectionHeading'))
+                let text = await heading.getText()
+                titlesList.push(text)
+            } catch (error:any){
+                console.warn('Failed to read sectionHeading for a job:', error.message)
+            }
         }
+
+        console.log("Job titles:", titlesList);
 
         await driver.sleep(500)
         
