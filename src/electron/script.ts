@@ -385,9 +385,11 @@ async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>,
             for (const container of jobContainers){
                 const headingElement = await container.findElement(By.css("h4.sectionHeading"));
                 const headingText = await headingElement.getText();
+                
+                let cleanedHeadingText = headingText.replace(/[\/\\?\*\[\]]/g, '')
 
                 //When job title found, hit add button
-                if(headingText.includes(currentShift.jobTitle)) {
+                if(cleanedHeadingText.includes(currentShift.jobTitle)) {
                     const addTimeButton = await container.findElement(By.css("a#addTime"));
                     await driver.wait(until.elementIsVisible(addTimeButton), 500);
                     await addTimeButton.click();
@@ -554,7 +556,8 @@ async function collectJobTitles(window: any): Promise<string[]> {
                 await driver.executeScript("arguments[0].scrollIntoView();", job);
                 let heading = await job.findElement(By.css('.sectionHeading'))
                 let text = await heading.getText()
-                titlesList.push(text)
+                let cleanedText = text.replace(/[\/\\?\*\[\]]/g, '')
+                titlesList.push(cleanedText)
             } catch (error:any){
                 console.warn('Failed to read sectionHeading for a job:', error.message)
             }
