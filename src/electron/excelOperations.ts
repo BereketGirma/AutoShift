@@ -118,6 +118,10 @@ export class ExcelOperations {
             const updatedData = [...existingSheetData, ...data];
             this.sortShifts(updatedData)
 
+            updatedData.forEach((shift, index) => {
+                shift.id = index + 1
+            })
+        
             const updatedWorksheet = XLSX.utils.json_to_sheet(updatedData)
 
             //If the workbook was not found, create one and add shifts
@@ -253,6 +257,55 @@ export class ExcelOperations {
         }
     }
 
+
+    /**
+     * Handles editing of shifts from the excel file
+     * @param shiftToDelete 
+     * @returns 
+     */
+    public async EditShiftOnFile(updatedShift: ExcelData, sheetName: string): Promise<void> {
+        try{ 
+            //Checking if the file exists at the file path
+            if(!fs.existsSync(this.filePath)) {
+                return;
+            }
+
+            const existingData = await this.readExcelFile();
+
+            const sheetData = existingData[sheetName] || [];
+
+            //Filtered data holding every shift except the one to be updated
+            //This is used for collision check before full update
+            const filteredData = sheetData.filter((shift) => shift.id !== updatedShift.id);
+
+            //Check for an collision with shifts before adding
+            if(this.checkCollidingData(filteredData, [updatedShift])){
+                throw new Error('Collision')
+            }
+
+            //Find and update the shift
+            const updatedData = sheetData.map((shift): ExcelData => {
+                return shift.id === updatedShift.id ? { ...shift, ...updatedShift } : shift;
+            })
+
+            // Storing to prepare for updating file
+            const updatedWorksheet = XLSX.utils.json_to_sheet(updatedData, {skipHeader: false});
+
+            // Check if workbook exists before updating file
+            if(this.workbook){
+                this.workbook.Sheets[sheetName] = updatedWorksheet;
+            } else {
+                throw new Error('Workbook is not loaded.');
+            }
+
+            //Write into the file
+            XLSX.writeFile(this.workbook, this.filePath)
+
+        } catch (error) {
+            throw error
+        }
+    }
+
     /**
      * Reloads the excel file by reading the file again
      */
@@ -271,7 +324,7 @@ export class ExcelOperations {
      */
     public async createNewSheet(sheetName: string){
         try{
-            const headers = [['day', 'startTime', 'endTime']];
+            const headers = [['id', 'day', 'startTime', 'endTime']];
             this.worksheet = XLSX.utils.aoa_to_sheet(headers)
             if (this.workbook) {
                 XLSX.utils.book_append_sheet(this.workbook, this.worksheet, sheetName);

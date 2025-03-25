@@ -7,9 +7,11 @@ export function isDev(): boolean {
 
 //Definds how shifts are sorted in Excel file
 export interface ExcelData {
+    id: number;
     day: string;
     startTime: string;
     endTime: string;
+    comment: string | null;
 }
 
 //This is where all ipc handlers format are defined
@@ -44,6 +46,14 @@ export interface EventPayloadMapping {
         response: {
             success: boolean;
             error?: string;
+        }
+    },
+
+    'edit-from-file': {
+        request: void;
+        response: {
+            success: boolean;
+            erorr?: string;
         }
     },
 

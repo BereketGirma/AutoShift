@@ -266,7 +266,7 @@ async function formatTime(time: string): Promise<string> {
  * @returns an array filled with the shifts spanning between the given start and end date
  */
 async function generateSchedule(data: Record<string, ExcelData[]>, startDate: string, endDate: string){
-    const schedule: { jobTitle: string, date: string; startTime: string; endTime: string }[] = [];
+    const schedule: { jobTitle: string, date: string; startTime: string; endTime: string, comment: string }[] = [];
 
     //Sorting days for easier comparison with dayjs type
     const dayOfWeekMap = {
@@ -302,7 +302,8 @@ async function generateSchedule(data: Record<string, ExcelData[]>, startDate: st
                             jobTitle: sheetName,
                             date: currentDate.format('YYYYMMDD'),
                             startTime: await formatTime(shift.startTime),
-                            endTime: await formatTime(shift.endTime)
+                            endTime: await formatTime(shift.endTime),
+                            comment: shift.comment ? shift.comment : ''
                         })
                     }
                 }
@@ -384,9 +385,11 @@ async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>,
             for (const container of jobContainers){
                 const headingElement = await container.findElement(By.css("h4.sectionHeading"));
                 const headingText = await headingElement.getText();
+                
+                let cleanedHeadingText = headingText.replace(/[\/\\?\*\[\]]/g, '')
 
                 //When job title found, hit add button
-                if(headingText.includes(currentShift.jobTitle)) {
+                if(cleanedHeadingText.includes(currentShift.jobTitle)) {
                     const addTimeButton = await container.findElement(By.css("a#addTime"));
                     await driver.wait(until.elementIsVisible(addTimeButton), 500);
                     await addTimeButton.click();
@@ -401,7 +404,7 @@ async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>,
                     jobTitle: currentShift.jobTitle,
                     date: currentShift.date,
                     startTime: currentShift.startTime,
-                    endTime: currentShift.endTime
+                    endTime: currentShift.endTime,
                 })
                 break;
             }
@@ -443,6 +446,10 @@ async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>,
             const endTimeSelector = await driver.wait(until.elementLocated(By.id("endTime")), 1000);
             const endTimeOption = await endTimeSelector.findElement(By.css(`option[value="${currentShift.endTime}"]`))
             await endTimeOption.click()
+
+            //Select the comment text area
+            const commentArea = await driver.wait(until.elementLocated(By.id("comments")), 1000);
+            commentArea.sendKeys(currentShift.comment)
 
             //Save the selected shift
             const saveTimeButton = await driver.findElement(By.id("timeSaveOrAddId"));
@@ -542,11 +549,21 @@ async function collectJobTitles(window: any): Promise<string[]> {
         
         const jobTitles = await driver.findElements(By.css('.well.table-responsive'))
 
+        console.log(`Found ${jobTitles.length} job containers`)
+
         for(let job of jobTitles){
-            let heading = await job.findElement(By.css('.sectionHeading'))
-            let text = await heading.getText()
-            titlesList.push(text)
+            try{
+                await driver.executeScript("arguments[0].scrollIntoView();", job);
+                let heading = await job.findElement(By.css('.sectionHeading'))
+                let text = await heading.getText()
+                let cleanedText = text.replace(/[\/\\?\*\[\]]/g, '')
+                titlesList.push(cleanedText)
+            } catch (error:any){
+                console.warn('Failed to read sectionHeading for a job:', error.message)
+            }
         }
+
+        console.log("Job titles:", titlesList);
 
         await driver.sleep(500)
         
