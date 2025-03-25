@@ -1,7 +1,7 @@
 # AutoShift 
 Automate your timesheet entries for Minnesota State University, Mankato timesheet with **AutoShift**. This desktop app simplifies logging work hours that are repetitive by automating the process. This reduces the manual effort required for timesheet entries.
 
-**Check out beta release [here](https://github.com/BereketGirma/AutoShift/releases/tag/AutoShift-v1.0-Beta)**
+**Check out latest release [here](https://github.com/BereketGirma/AutoShift/releases/tag/Latest)**
 
 ## ✨ Features 
 - **Automated Timesheet Entry**: Save time by automating repetitive hour logging.
