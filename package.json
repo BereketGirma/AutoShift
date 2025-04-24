@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
-    "@types/react": "^19.0.8",
+    "@types/react": "^18.3.20",
     "@types/react-dom": "^19.0.3",
     "@types/selenium-webdriver": "^4.1.27",
     "@types/unzipper": "^0.10.10",
