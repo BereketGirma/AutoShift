@@ -362,7 +362,7 @@ async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>,
         await proccessShifts(driver, shiftQueue, shiftsSkipped, window)
 
         sendProgressUpdates(window, "Shift's successfully added!", true)
-        await driver.sleep(5000);
+        await driver.sleep(500);
     } catch (error) {
         console.error(error);
         sendProgressUpdates(window, "Error occured while adding shifts.", true);
@@ -537,8 +537,6 @@ async function collectJobTitles(window: any): Promise<string[]> {
         
         const jobTitles = await driver.findElements(By.css('.well.table-responsive'))
 
-        console.log(`Found ${jobTitles.length} job containers`)
-
         for(let job of jobTitles){
             try{
                 await driver.executeScript("arguments[0].scrollIntoView();", job);
@@ -551,10 +549,6 @@ async function collectJobTitles(window: any): Promise<string[]> {
             }
         }
 
-        console.log("Job titles:", titlesList);
-
-        await driver.sleep(500)
-        
         return titlesList
 
     } catch(error){
