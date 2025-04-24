@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from'path';
 import os from 'os';
 import unzipper from 'unzipper';
-import { Builder, By, until, WebElement } from 'selenium-webdriver';
+import { Builder, By, until, WebDriver, WebElement } from 'selenium-webdriver';
 import { Options, ServiceBuilder } from 'selenium-webdriver/chrome.js';
 import { app, ipcMain } from 'electron';
 import { exec, execSync } from 'child_process';
@@ -16,6 +16,14 @@ interface ShiftFormat {
     date: string;
     startTime: string;
     endTime: string;
+}
+
+interface Shift {
+    jobTitle: string,
+    date: string;
+    startTime: string;
+    endTime: string;
+    comment: string;
 }
 
 
@@ -325,8 +333,8 @@ async function generateSchedule(data: Record<string, ExcelData[]>, startDate: st
  * @param endDate end date of when the shifts end
  * @returns 
  */
-async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>, startDate: string, endDate: string): Promise<void> {
 
+async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>, startDate: string, endDate: string): Promise<void> {
     await runScriptConfirmation(window)
 
     sendProgressUpdates(window, 'Checking for chromedriver...', false)
@@ -344,162 +352,149 @@ async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>,
     }
 
     sendProgressUpdates(window, 'Starting script', false)
-    //Initializing driver
+
+    const driver = await initializeDriver();
+    const shiftsSkipped: typeof shiftQueue = [];
+
+    try {
+        await waitForUserLogin(driver);
+
+        await proccessShifts(driver, shiftQueue, shiftsSkipped, window)
+
+        sendProgressUpdates(window, "Shift's successfully added!", true)
+        await driver.sleep(5000);
+    } catch (error) {
+        console.error(error);
+        sendProgressUpdates(window, "Error occured while adding shifts.", true);
+    } finally {
+        await driver.quit();
+    }
+
+}
+
+// Initializes web driver
+async function initializeDriver(): Promise<WebDriver>{
     const options = new Options()
-    const driver = await new Builder()
+    return  await new Builder()
         .forBrowser('chrome')
         .setChromeOptions(options)
         .setChromeService(new ServiceBuilder(chromedriverPath))
         .build();
+}
+
+/**
+ * Opens the driver window and waits until user is logged in
+ * @param driver Web driver that selenium is running on
+ */
+async function waitForUserLogin(driver: WebDriver): Promise<void>{
+    //Launch driver and open the link
+    await driver.get("https://eservices.minnstate.edu/finance-student/timeWorked.do?campusid=071");
+    await driver.wait(until.elementLocated(By.id('addTime')), 120000);
+}
+
+async function proccessShifts(driver: WebDriver, shiftQueue: Shift[], shiftsSkipped: Shift[], window:any) {
+    while (shiftQueue.length > 0) {
+        const currentShift = shiftQueue.shift()
+        if(!currentShift) break;
+
+        const jobFound = await handleJobSelection(driver, currentShift);
+
+        if(!jobFound) {
+            shiftsSkipped.push(currentShift);
+            continue;
+        }
+
+        await handleShiftEntry(driver, currentShift)
+
+        const errorOccurred = await handleErrors(driver, currentShift, window);
+        if(errorOccurred) {
+            shiftsSkipped.push(currentShift);
+        }
         
-    //Array to store any shifts skipped due to an error
-    const shiftsSkipped: { jobTitle: string, date: string; startTime: string; endTime: string }[] = [];
+    }
+}
 
-    try{
-        //Launch driver and open the link
-        await driver.get("https://eservices.minnstate.edu/finance-student/timeWorked.do?campusid=071");
+async function handleJobSelection(driver: WebDriver, shift: Shift): Promise<boolean> {
+    // Wait until job title renders
+    await driver.wait(until.elementsLocated(By.css(".well.table-responsive")), 1000);
 
-        //Wait 2 minutes for the Add Time button to show up
-        //This is where the user has 2 minutes to login to website. it will terminate if not logged in with specified time 
-        const elementToWaitFor = By.id('addTime')
-        await driver.wait(until.elementLocated(elementToWaitFor), 120000)
+    // Job web containers
+    const containers: WebElement[] = await driver.findElements(By.css(".well.table-responsive"));
 
-        //Initilizing driver window to control if window should be hidden
-        const driverWindow = driver.manage().window()
-        // await driverWindow.minimize()
+    //Loop through job containers to find job title
+    for (const container of containers){
+        const headingText = (await container.findElement(By.css("h4.sectionHeading"))).getText();
         
-        //Loop through the shift queue provided
-        while(shiftQueue.length > 0){
-            //Dequeue the first shift
-            const currentShift = shiftQueue.shift()
-            if(!currentShift){
-                break
-            }
+        // Removing characters that cause errors
+        const cleaned = (await headingText).replace(/[\/\\?\*\[\]]/g, '')
 
-            await driver.wait(until.elementsLocated(By.css(".well.table-responsive")), 1000);
+        //When job title found, hit add button
+        if(cleaned.includes(shift.jobTitle)) {
+            const addTimeButton = await container.findElement(By.css("a#addTime"));
+            await driver.wait(until.elementIsVisible(addTimeButton), 500);
+            await addTimeButton.click();
+            return true;
+        }
+    }
+    return false;
+}
 
-            const jobContainers: WebElement[] = await driver.findElements(By.css(".well.table-responsive"));
+async function handleShiftEntry(driver: WebDriver, shift: Shift): Promise<void> {
+    // Date selection logic (with pay period fallback)
+    const dateSelector = await driver.wait(until.elementLocated(By.id("date")), 1000);
+    const dateOption = By.css(`option[value="${shift.date}"]`);
 
-            let jobTitleFound = false;
-            //Loop through job containers to find job title
-            for (const container of jobContainers){
-                const headingElement = await container.findElement(By.css("h4.sectionHeading"));
-                const headingText = await headingElement.getText();
-                
-                let cleanedHeadingText = headingText.replace(/[\/\\?\*\[\]]/g, '')
+    if(await elementIsVisible(driver, dateOption)) {
+        await (await dateSelector.findElement(dateOption)).click()
+    } else {
+        const cancel = await driver.findElement(By.className("cancelButton"));
+        await cancel.click()
 
-                //When job title found, hit add button
-                if(cleanedHeadingText.includes(currentShift.jobTitle)) {
-                    const addTimeButton = await container.findElement(By.css("a#addTime"));
-                    await driver.wait(until.elementIsVisible(addTimeButton), 500);
-                    await addTimeButton.click();
-                    jobTitleFound = true;
-                    break;
-                }
-            }
+        const dateInput = await driver.findElement(By.id('payPeriodDate2'));
+        await dateInput.clear();
+        await dateInput.sendKeys(formatDateToMMDDYYYY(shift.date));
 
-            //If job title was not found add that to shift's being skipped
-            if(!jobTitleFound){
-                shiftsSkipped.push({
-                    jobTitle: currentShift.jobTitle,
-                    date: currentShift.date,
-                    startTime: currentShift.startTime,
-                    endTime: currentShift.endTime,
-                })
-                break;
-            }
+        await driver.findElement(By.id('retrieveDateLink')).click()
+        await driver.findElement(By.id("addTime")).click()
+    }
 
-            //Select the shift start date. Will wait 1second until element is loaded in
-            const startDateSelector = await driver.wait(until.elementLocated(By.id("date")), 1000);
-            const startDateElement = By.css(`option[value="${currentShift.date}"]`)
+    // Time and comment
+    await driver.findElement(By.css(`select#startTime option[value="${shift.startTime}"]`)).click()
+    await driver.findElement(By.css(`select#endTime option[value="${shift.endTime}"]`)).click()
+    await driver.findElement(By.id("comments")).sendKeys(shift.comment);
+    await driver.findElement(By.id("timeSaveOrAddId")).click();
+}
 
-            //Checking of the start date exists in the list of options
-            if(await elementExists(driver, startDateElement)){
-                const startDateOption = await startDateSelector.findElement(By.css(`option[value="${currentShift.date}"]`))
-                //Choose it if it exists
-                await startDateOption.click()
+/**
+ * Handles formatting given string from `MMDDYYYY --> MM/DD/YYYY`
+ * @param date format must be in `MMDDYYYY`
+ * @returns string format of date `MM/DD/YYYY`
+ */
+function formatDateToMMDDYYYY(date: string): string {
+    return `${date.slice(4,6)}/${date.slice(-2)}/${date.slice(0,4)}`
+}
+
+async function handleErrors(driver: WebDriver, shift: Shift, window: any): Promise<boolean> {
+    if (await elementIsVisible(driver, By.id("errorMessageHolder"))) {
+        if (await elementIsVisible(driver, By.id("classReasonCode"))) {
+            const confirmed = await waitForConfirmation(window, shift);
+
+            if(confirmed) {
+                await driver.findElement(By.id("continueId")).click();
+                return false;
             } else {
-                //If it doesn't exists, cancel and change the time frame through pay period
-                const cancelButton = await driver.wait(until.elementLocated(By.className("cancelButton")), 1000)
-                await cancelButton.click()
-
-                //Clear existing choice and enter the date option into the pay period to switch
-                const dateInput = await driver.wait(until.elementLocated(By.id('payPeriodDate2')), 1000)
-                await dateInput.clear()
-                await dateInput.sendKeys(`${currentShift.date.slice(4,6)}/${currentShift.date.slice(-2)}/${currentShift.date.slice(0,4)}`)
-
-                //Finds retrieve button and click it 
-                const retrieveButton = await driver.wait(until.elementLocated(By.id('retrieveDateLink')), 1000);
-                await retrieveButton.click()
-
-                //Find add time button and click it
-                const addTimeButton = await driver.findElement(elementToWaitFor)
-                addTimeButton.click()
-            }
-
-            //Select the time where shift starts
-            const startTimeSelector = await driver.wait(until.elementLocated(By.id("startTime")), 1000);
-            const startTimeOption = await startTimeSelector.findElement(By.css(`option[value="${currentShift.startTime}"]`))
-            await startTimeOption.click()
-
-            //Select the time where shift ends
-            const endTimeSelector = await driver.wait(until.elementLocated(By.id("endTime")), 1000);
-            const endTimeOption = await endTimeSelector.findElement(By.css(`option[value="${currentShift.endTime}"]`))
-            await endTimeOption.click()
-
-            //Select the comment text area
-            const commentArea = await driver.wait(until.elementLocated(By.id("comments")), 1000);
-            commentArea.sendKeys(currentShift.comment)
-
-            //Save the selected shift
-            const saveTimeButton = await driver.findElement(By.id("timeSaveOrAddId"));
-            await saveTimeButton.click()
-
-            //When clicking save, if error pops up, add into shifts being skipped
-            if(await elementExists(driver, By.id("errorMessageHolder"))) {
-                shiftsSkipped.push({
-                    jobTitle: currentShift.jobTitle,
-                    date: currentShift.date,
-                    startTime: currentShift.startTime,
-                    endTime: currentShift.endTime
-                })
-
-                //Check if the error message was a class conflict
-                if(await elementExists(driver, By.id("classReasonCode"))) {
-                    //Wait until user confirms through UI
-                    const userConfirmed = await waitForConfirmation(window, currentShift)
-                    
-                    //If confirmed, keep adding shift
-                    if(userConfirmed){
-                        const continueButton = await driver.findElement(By.id("continueId"))
-                        await continueButton.click()
-                        continue
-                    } else {
-                        //If not, then cancel adding shift
-                        const goBackButton = await driver.findElement(By.className("cancelOnWarningButton"))
-                        await goBackButton.click()
-                    }
-                }
-
-                //Cancel again to go back to initial page
-                const cancelButton = await driver.wait(until.elementLocated(By.className("cancelButton")))
-                await cancelButton.click()
+                await driver.findElement(By.className("cancelOnWarningButton")).click();
             }
         }
 
-        //If no error occurs in the way, this will send a UI progress update
-        sendProgressUpdates(window, "Shift's successfully added!", true);
-        await driver.sleep(5000)
-        
-        return
+        if (await elementIsVisible(driver, By.className("cancelButton"))) {
+            await driver.findElement(By.className("cancelButton")).click();
+        }
 
-    } catch(error){
-        console.error(error)
-        sendProgressUpdates(window, "Error occured while adding shifts.", true)
-    } finally {
-        //Quit driver after process is done
-        await driver.quit();
+        return true;
     }
+
+    return false;
 }
 
 /**
@@ -508,15 +503,13 @@ async function runSeleniumScript(window: any, data: Record<string, ExcelData[]>,
  * @param element this is the element that is being searched for
  * @returns if the desired element exists returns true, if not then false
  */
-async function elementExists(driver: any, element: any): Promise<boolean>{
+async function elementIsVisible(driver: any, locator: any): Promise<boolean>{
     try{
-        await driver.findElement(element)
+        const elemenet = await driver.wait(until.elementLocated(locator), 3000);
+        await driver.wait(until.elementIsVisible(elemenet), 3000);
         return true;
     } catch (error: any) {
-        if(error.name === "NoSuchElementError") {
-            return false;
-        }
-        throw error
+        return false;
     }
 }
 
@@ -525,12 +518,7 @@ async function collectJobTitles(window: any): Promise<string[]> {
     await ensureChromedriverExists(window);
 
     //Initializing driver
-    const options = new Options()
-    const driver = await new Builder()
-        .forBrowser('chrome')
-        .setChromeOptions(options)
-        .setChromeService(new ServiceBuilder(chromedriverPath))
-        .build();
+    const driver = await initializeDriver();
 
     const titlesList: string[] = [];
 
